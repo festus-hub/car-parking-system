@@ -1,0 +1,42 @@
+<!-- total_amount.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Amount</title>
+    <style>
+        #details {
+            display: none; /* Hide details by default */
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Total Amount: ${{ total_amount }}</h1>
+    <button id="toggleDetails">More Info</button>
+
+    <div id="details">
+        <h3>Breakdown:</h3>
+        <ul>
+            <li>Base Fee: ${{ charges.base_fee }}</li>
+            <li>Hourly Fee: ${{ charges.hourly_fee }}</li>
+            <li>Tax: ${{ charges.tax }}</li>
+        </ul>
+    </div>
+
+    <script>
+        // JavaScript to toggle the visibility of the details
+        document.getElementById('toggleDetails').addEventListener('click', function () {
+            const details = document.getElementById('details');
+            if (details.style.display === 'none') {
+                details.style.display = 'block'; // Show the breakdown
+            } else {
+                details.style.display = 'none'; // Hide the breakdown
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+  <h1>Customer List</h1>
+
+  <table>
+    <thead>
+        <tr>
+            <th><a href="?ordering=name">Name</a></th>
+            <th><a href="?ordering=email">Email</a></th>
+            <th><a href="?ordering=phone_number">Phone Number</a></th>
+        </tr
+    </thead>
+    <tbody>
+      {% for customer in customers %}
+        <tr>
+          <td>{{ customer.name }}</td>
+          <td>{{ customer.email }}</td>
+          <td>{{ customer.phone_number }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="3">No customers found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    {% if customers.has_previous %}
+      <a href="?page=1">&laquo; First</a>
+      <a href="?page={{ customers.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    <span class="current-page">
+      Page {{ customers.number }} of {{ customers.paginator.num_pages }}.
+    </span>
+
+    {% if customers.has_next %}
+      <a href="?page={{ customers.next_page_number }}">Next</a>
+      <a href="?page={{ customers.paginator.num_pages }}">Last &raquo;</a>
+    {% endif %}
+  </div>
+{% endblock %}

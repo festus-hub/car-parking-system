@@ -1,0 +1,70 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block body %}
+<div class="container mt-4">
+    <h2 class="mb-4">User Details</h2>
+
+    <!-- Box to wrap the table inside a styled container -->
+    <div class="card">
+        <div class="card-body">
+            <!-- Table to display user details -->
+            <table id="userTable" class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Date Joined</th>
+                        <th>Last Login</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- The rows will be dynamically updated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Fetch user details from the API
+    fetch("/user-details/")  // Now this returns all users
+    .then(response => response.json())
+    .then(data => {
+      const tableBody = document.getElementById("userTable").getElementsByTagName('tbody')[0];
+      
+      if (Array.isArray(data) && data.length > 0) {
+        data.forEach(user => {
+          const newRow = tableBody.insertRow();
+  
+          // Convert date_joined and last_login to "MM/DD/YYYY" format
+          const formatDate = (date) => {
+            const d = new Date(date);
+            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
+            const year = d.getFullYear();
+            return `${month}/${day}/${year}`;
+          };
+  
+          const dateJoined = formatDate(user.date_joined);
+          const lastLogin = user.last_login ? formatDate(user.last_login) : "Never";
+  
+          newRow.insertCell(0).textContent = user.id;
+          newRow.insertCell(1).textContent = user.username;
+          newRow.insertCell(2).textContent = user.email;
+          newRow.insertCell(3).textContent = dateJoined;
+          newRow.insertCell(4).textContent = lastLogin;
+        });
+      } else {
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center">No users found.</td></tr>`;
+      }
+    })
+    .catch(error => {
+      console.error("Error fetching user details:", error);
+      document.getElementById("userTable").getElementsByTagName('tbody')[0].innerHTML = `<tr><td colspan="5" class="text-center">Error loading user details.</td></tr>`;
+    });
+  </script>
+  
+
+{% endblock %}

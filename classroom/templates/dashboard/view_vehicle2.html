@@ -8,31 +8,39 @@
 </div>
 
 <div class="modal-body">
-
   <div class="">
-   <strong> Username: </strong>
+    <strong> Username: </strong>
     {{ customer.first_name }}
-  </div>
-  <div class="">
+ </div>
+ <div class="">
     <strong> Cost Per Day: </strong>
     {{ customer.cost_per_day }}
-  </div>
-  <div class="">
+ </div>
+ <div class="">
     <strong> Entry Date: </strong>
     {{ customer.reg_date }}
-  </div>
-  <div class="">
-   <strong> Exit Date: </strong>
+ </div>
+ <div class="">
+    <strong> Exit Date: </strong>
     {{ customer.exit_date }}
-  </div>
-  <div class="">
+ </div>
+ <div class="">
     <strong> Total Cost: </strong>
     {{ customer.total_cost }}
-  </div>
-  <div class="">
+ </div>
+ <div class="">
     <strong> Days Spent: </strong>
     {{ customer.days_spent }}
-  </div>
+ </div>
+ <div class="">
+    <strong> Payment Method: </strong>
+    {{ customer.payment_method }}
+ </div>
+ <div class="">
+    <strong> Payment Date: </strong>
+    {{ customer.payment_date|date:"Y-m-d H:i" }}
+ </div>
+ 
 
 </div>
 

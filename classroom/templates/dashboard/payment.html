@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Details</title>
+    <!-- Add any stylesheets or Bootstrap links if necessary -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Payment Details for Customer #{{ customer.pk }}</h2>
+
+        <!-- Assuming you are showing customer payment details here -->
+        <form method="POST" action="{% url 'update_payment_method' pk=customer.pk %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="payment_method">Payment Method</label>
+                <select name="payment_method" id="payment_method" class="form-control" required>
+                    <option value="Cash" {% if customer.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
+                    <option value="Card" {% if customer.payment_method == 'Card' %}selected{% endif %}>Card</option>
+                    <option value="Other" {% if customer.payment_method == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount</label>
+                <input type="number" name="amount" id="amount" class="form-control" value="{{ customer.total_cost }}" >
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Update Payment Method</button>
+            </div>
+        </form>
+
+        <!-- Optionally show any error or success messages -->
+        {% if messages %}
+            <div class="alert alert-info">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Bootstrap JS (if needed) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

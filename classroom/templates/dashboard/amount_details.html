@@ -1,0 +1,10 @@
+{% extends 'dashboard/base.html' %}
+
+{% block body %}
+    <div class="container-fluid">
+        <h2>Amount Details</h2>
+        <p>Here are the details for the total amount:</p>
+        <p><strong>Total Amount:</strong> Ksh {{ total_amount }}</p>
+        <p><strong>Other Details:</strong> {{ other_details }}</p> <!-- You can customize this -->
+    </div>
+{% endblock %}

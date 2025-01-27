@@ -5,11 +5,14 @@ from classroom import views
 from django.contrib.auth import views as auth_views
 
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
     path('login/', views.login, name='login'),
     path('signup/', views.signup, name='signup'),
+    path('parking_lot/', views.parking_lot, name='parking_lot'),
+    path('vehicle-location/<str:license_plate>/', views.vehicle_location, name='vehicle-location'),
     path('pay/<int:pk>', views.Pay, name='pay'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('add_vehicle/', views.add_vehicle, name='add_vehicle'),
@@ -29,6 +32,22 @@ urlpatterns = [
     path('user_update/<int:pk>', views.UserUpdateView.as_view(), name='user_update'),
     path('delete_user/<int:pk>', views.DeleteUser.as_view(), name='delete_user'),
     path('create/create', views.create, name='create'),
+    path('api/parking/register/', views.ParkCarView.as_view(), name='register_car'),
+    path('amount-details/<int:customer_id>/', views.amount_details, name='amount_details'),
+    path('vehicle-details/', views.vehicle_details, name='vehicle_details'),
+    path('user_details/', views.user_details, name='user_details'), 
+    path('user-details/<int:user_id>/', views.user_details, name='user_details'),  
+    path('track-vehicle/<int:pk>/', views.track_vehicle, name='track_vehicle'),
+    path('update-payment-method/<int:pk>/', views.update_payment_method, name='update_payment_method'),
+    path("process-update-payment/", views.update_payment_method, name="process_update_payment"),
+    path('api/vehicle-data/', views.get_vehicle_data, name='get_vehicle_data'),
+    path('vehicle-map/', views.vehicle_map, name='vehicle_map'),
+    path('api/vehicle-data/', views.get_vehicle_data, name='get_vehicle_data'),
+
+
+
+
+
 
 
 

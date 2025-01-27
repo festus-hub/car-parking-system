@@ -9,6 +9,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 TEMPLATE_DIR = os.path.join(BASE_DIR,'templates')
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
 
 STATIC_DIR=os.path.join(BASE_DIR,'static')
 
@@ -21,7 +24,7 @@ SECRET_KEY = 'sotgn(5f3nd(d=a_5w#((x(u!kio!4!%yh-&&i&w%m@4--t###'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -36,6 +39,7 @@ INSTALLED_APPS = [
     'classroom',
     'bootstrap_modal_forms',
     'widget_tweaks',
+    'rest_framework',
     
 ]
 
@@ -54,7 +58,7 @@ ROOT_URLCONF = 'eagle.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -80,6 +84,12 @@ DATABASES = {
         
     }
 }
+
+TWILIO_ACCOUNT_SID = "your_account_sid"
+TWILIO_AUTH_TOKEN = "your_auth_token"
+TWILIO_PHONE_NUMBER = "+25416454678"
+
+
 
 
 # Password validation
@@ -126,9 +136,9 @@ AUTH_USER_MODEL = 'classroom.User'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "static"),
-)
+STATICFILES_DIRS = [
+    BASE_DIR / "static",  
+]
 
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -144,3 +154,26 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 #LOGIN_URL = 'home'
 #LOGIN_REDIRECT_URL = 'home'
+
+STRIPE_PUBLISHABLE_KEY = "your_publishable_key"
+STRIPE_SECRET_KEY = "your_secret_key"
+
+
+MPESA_ENVIRONMENT = os.getenv('MPESA_ENVIRONMENT', 'sandbox')
+MPESA_CONSUMER_KEY = os.getenv('MPESA_CONSUMER_KEY')
+MPESA_CONSUMER_SECRET = os.getenv('MPESA_CONSUMER_SECRET')
+MPESA_SHORTCODE = os.getenv('MPESA_SHORTCODE')
+MPESA_PASSKEY = os.getenv('MPESA_PASSKEY')
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'festuskipchirchir15@gmail.com'
+EMAIL_HOST_PASSWORD = 'dnue maql srke ushx'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_TIMEOUT = 60
+
+

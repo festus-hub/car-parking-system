@@ -1,0 +1,34 @@
+{% extends 'dashboard/base.html' %}
+{% block body %}
+<div class="container mt-4">
+    <h2>Track Vehicle: {{ vehicle.license_plate }}</h2>
+    <p><strong>Owner:</strong> {{ vehicle.owner }}</p>
+    <p><strong>License Plate:</strong> {{ vehicle.license_plate }}</p>
+    <p><strong>Location (Town):</strong> {{ vehicle.town }}</p>
+    
+    {% if latitude and longitude %}
+        <!-- Map container -->
+        <div id="map" style="height: 500px;"></div>
+
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script>
+            // Initialize the map with the coordinates
+            var latitude = {{ latitude }};
+            var longitude = {{ longitude }};
+            var map = L.map('map').setView([latitude, longitude], 15);
+
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Add a marker for the vehicle's location
+            L.marker([latitude, longitude]).addTo(map)
+                .bindPopup("<b>License Plate:</b> {{ vehicle.license_plate }}<br><b>Location:</b> {{ vehicle.town }}")
+                .openPopup();
+        </script>
+    {% else %}
+        <p>Location information is unavailable.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Payment Method</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <h1>Update Payment Method</h1>
+    <form method="POST" id="update-payment-form" action="{% url 'update_payment_method' id=customer.id %}">
+        {% csrf_token %}
+        <label for="payment_method">Payment Method:</label>
+        <select name="payment_method" id="payment_method">
+            <option value="Cash" {% if customer.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
+            <option value="Credit Card" {% if customer.payment_method == 'Credit Card' %}selected{% endif %}>Credit Card</option>
+            <!-- Add other payment methods as needed -->
+        </select>
+        <button type="submit" id="update-payment-button">Update Payment Method</button>
+    </form>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Initialize Stripe
+            const stripe = Stripe("{{ publishable_key }}");
+            const elements = stripe.elements();
+            const card = elements.create("card");
+            card.mount("#card-element");
+
+            // Handle form submission
+            const form = document.getElementById("update-payment-form");
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                // Confirm Card Setup
+                const { setupIntent, error } = await stripe.confirmCardSetup(
+                    "{{ client_secret }}",
+                    {
+                        payment_method: {
+                            card: card,
+                            billing_details: {
+                                name: "{{ request.user.get_full_name }}",
+                                email: "{{ request.user.email }}",
+                            },
+                        },
+                    }
+                );
+
+                if (error) {
+                    console.error(error.message);
+                    alert("Failed to update payment method. Please try again.");
+                } else {
+                    // Add the payment method ID to the form and submit
+                    const hiddenInput = document.createElement("input");
+                    hiddenInput.setAttribute("type", "hidden");
+                    hiddenInput.setAttribute("name", "payment_method_id");
+                    hiddenInput.setAttribute("value", setupIntent.payment_method);
+                    form.appendChild(hiddenInput);
+                    form.submit();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

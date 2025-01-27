@@ -1,0 +1,14 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+  <h1>Vehicle Parked</h1>
+  <p>Vehicle with license plate {{ vehicle.license_plate }} has been successfully parked at {{ location.name }}.</p>
+  
+  {% if location.section %}
+    <p>Section: {{ location.section }}</p>
+  {% endif %}
+  
+  <p>Parked at: {{ vehicle.parked_at|date:"F j, Y, g:i a" }}</p>
+
+  <a href="{% url 'vehicle_details' vehicle_id=vehicle.id %}">View Vehicle Details</a>
+{% endblock %}

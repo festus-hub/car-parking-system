@@ -9,6 +9,8 @@
           <div class="col-12 mb-3">
           <div class="col-12 mb-3">
             {% if customers %}
+            <p>Found {{ customers.count }} vehicles</p>
+
               {% include "dashboard/vehicle_table2.html" %}
             {% else %}
               <p class="no-books text-primary">No It Vehicle added yet.</p>
