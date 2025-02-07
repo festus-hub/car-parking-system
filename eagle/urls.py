@@ -43,7 +43,7 @@ urlpatterns = [
     path('api/vehicle-data/', views.get_vehicle_data, name='get_vehicle_data'),
     path('vehicle-map/', views.vehicle_map, name='vehicle_map'),
     path('api/vehicle-data/', views.get_vehicle_data, name='get_vehicle_data'),
-
+    path('search/', views.global_search, name='global_search'),
 
 
 

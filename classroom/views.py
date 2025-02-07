@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from twilio.rest import Client
 import stripe
+from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Payment
 from django.core.mail import send_mail
@@ -393,7 +394,7 @@ class GeneratePdf(ListView):
             'order_id': 1233434,
             'location': ' KENYA, NAIROBI',
             'address': 'P.Box 1458 NAIROBI',
-            'email': 'info@motechapp.com',
+            'email': 'info@techapp.com',
         },
         "infos": infos,
         }
@@ -748,3 +749,23 @@ def get_vehicle_data(request):
     serializer = VehicleSerializer(vehicles, many=True)  # Serialize the vehicle data
     return Response(serializer.data)
 
+def global_search(request):
+    query = request.GET.get("query", "")
+    vehicle_results = VehicleLocation.objects.filter(
+        Q(license_plate__icontains=query) | 
+        Q(town__icontains=query) | 
+        Q(parking_slot__slot_number__icontains=query)
+    ) if query else []
+
+    user_results = User.objects.filter(
+        Q(username__icontains=query) | 
+        Q(email__icontains=query)
+    ) if query else []
+
+    # Add other models as needed
+
+    return render(request, "dashboard/global_search.html", {
+        "query": query,
+        "vehicle_results": vehicle_results,
+        "user_results": user_results
+    })
