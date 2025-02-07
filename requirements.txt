@@ -62,7 +62,6 @@ pypng==0.20220715.0
 PyQRCode==1.2.1
 python-bidi==0.6.3
 python-http-client==3.3.7
-pywin32==308
 PyYAML==6.0.2
 pyzbar==0.1.9
 qrcode==8.0
@@ -86,7 +85,6 @@ uritools==4.0.3
 urllib3==2.2.3
 webencodings==0.5.1
 Werkzeug==3.0.6
-WinToaster==0.1.0
 xhtml2pdf==0.2.16
 yarl==1.18.3
 zipp==3.21.0
