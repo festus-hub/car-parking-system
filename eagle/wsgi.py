@@ -13,5 +13,6 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'eagle.settings')
 
-app = get_wsgi_application()
-handler =app
+application = get_wsgi_application()
+
+app = application
