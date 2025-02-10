@@ -24,7 +24,15 @@ SECRET_KEY = 'sotgn(5f3nd(d=a_5w#((x(u!kio!4!%yh-&&i&w%m@4--t###'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
+
+ALLOWED_HOSTS = [
+    "c4db-41-139-202-31.ngrok-free.app",
+    "your-vercel-app-url.vercel.app",
+    "localhost",
+    "127.0.0.1"
+]
+
 
 
 # Application definition
@@ -42,6 +50,12 @@ INSTALLED_APPS = [
     'rest_framework',
     
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://c4db-41-139-202-31.ngrok-free.app",
+    "https://your-vercel-app-url.vercel.app"  # Add your Vercel domain here
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
