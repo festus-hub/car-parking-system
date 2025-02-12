@@ -20,7 +20,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- The rows will be dynamically updated by JavaScript -->
+                  {% for user in users %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.date_joined }}</td>
+                    <td>{{ user.last_login }}</td>
+                </tr>
+                {% endfor %}
+
                 </tbody>
             </table>
         </div>
