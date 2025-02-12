@@ -27,7 +27,7 @@ DEBUG = True
 # ALLOWED_HOSTS = ['*']
 
 ALLOWED_HOSTS = [
-    "c4db-41-139-202-31.ngrok-free.app",
+    "bd50-41-139-202-31.ngrok-free.app",
     "your-vercel-app-url.vercel.app",
     "localhost",
     "127.0.0.1"
@@ -52,7 +52,7 @@ INSTALLED_APPS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://c4db-41-139-202-31.ngrok-free.app",
+    "https://bd50-41-139-202-31.ngrok-free.app",
     "https://your-vercel-app-url.vercel.app"  # Add your Vercel domain here
 ]
 
