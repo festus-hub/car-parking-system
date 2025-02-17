@@ -56,7 +56,7 @@ class Payment(models.Model):
     id = models.AutoField(primary_key=True)
 
     def _str_(self):
-        return f"Payment of {self.amount} by {self.user.username}"
+        return f"Payment of {self.amount} by {self.customer}"
 
 class ParkingLocation(models.Model):
     name = models.CharField(max_length=100)  # Name of the parking area/slot

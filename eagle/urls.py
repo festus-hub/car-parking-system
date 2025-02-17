@@ -44,8 +44,8 @@ urlpatterns = [
     path('vehicle-map/', views.vehicle_map, name='vehicle_map'),
     path('api/vehicle-data/', views.get_vehicle_data, name='get_vehicle_data'),
     path('search/', views.global_search, name='global_search'),
-
-
+    path("mpesa/stk_push/<int:pk>/", views.stk_push_payment, name="stk_push_payment"),
+    path("mpesa/stk_callback/", views.mpesa_stk_callback, name="mpesa_stk_callback"),
 
 
 
