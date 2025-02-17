@@ -1,3 +1,4 @@
+import base64
 import json
 from django.shortcuts import redirect, render, get_object_or_404
 import requests
@@ -777,24 +778,20 @@ def global_search(request):
 
 
 def stk_push_payment(request, pk):
-    """Initiates STK Push to the customer's phone"""
     customer = get_object_or_404(Customer, pk=pk)
 
     if request.method == "POST":
-        phone_number = request.POST.get("phone_number")  # Get phone number from form
+        phone_number = request.POST.get("phone_number")
         amount = int(customer.total_cost)
-
         access_token = get_mpesa_access_token()
-
         timestamp = now().strftime("%Y%m%d%H%M%S")
-        password = settings.MPESA_SHORTCODE + settings.MPESA_PASSKEY + timestamp
+        password = base64.b64encode((settings.MPESA_SHORTCODE + settings.MPESA_PASSKEY + timestamp).encode()).decode()
 
         url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
-
         payload = {
             "BusinessShortCode": settings.MPESA_SHORTCODE,
             "Password": password,
@@ -812,15 +809,17 @@ def stk_push_payment(request, pk):
         response = requests.post(url, json=payload, headers=headers)
         response_data = response.json()
 
+        # Print response in Django terminal
+        print("STK Push Response:", json.dumps(response_data, indent=4))
+
         if response_data.get("ResponseCode") == "0":
             messages.success(request, "Payment request sent. Check your phone to complete payment.")
         else:
-            messages.error(request, "M-Pesa payment failed. Please try again.")
+            messages.error(request, f"Payment failed: {response_data.get('errorMessage', 'Unknown error')}")
 
-        return redirect("payment_details", pk=pk)
+        return redirect("payment", pk=pk)
 
-    return render(request, "payment_details.html", {"customer": customer})
-
+    return render(request, "payment.html", {"customer": customer})
 
 def mpesa_stk_callback(request):
     """Handles M-Pesa STK Push callback"""
