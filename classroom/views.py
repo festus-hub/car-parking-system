@@ -364,7 +364,7 @@ def Pay(request, pk):
         total_cost = cost_per_day * mo
         Customer.objects.filter(id = pk).update(total_cost = total_cost)
         payment_method = request.POST.get('payment_method')
-        payment_date = now()
+        payment_date = timezone.now()
         Customer.payment_method = payment_method
         Customer.payment_date = payment_date
         customer = Customer.objects.get(id = pk)

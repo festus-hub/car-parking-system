@@ -47,7 +47,8 @@
                                                 <!-- Dropdown to choose payment method -->
                                                 <form action="{% url 'update_payment_method' customer.pk %}" method="POST">
                                                     {% csrf_token %}
-                                                    <select name="payment_method" class="form-control">
+                                                    <select name="payment_method" class="form-control" onchange="this.form.submit()">
+                                                        <option value="M-Pesa" {% if customer.payment_method == 'M-Pesa' %}selected{% endif %}>M-Pesa</option>
                                                         <option value="Cash" {% if customer.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
                                                         <option value="Card" {% if customer.payment_method == 'Card' %}selected{% endif %}>Card</option>
                                                         <option value="Other" {% if customer.payment_method == 'Other' %}selected{% endif %}>Other</option>
