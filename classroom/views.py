@@ -53,7 +53,8 @@ from . import models
 import operator
 import itertools
 from django.db.models import Sum
-from .utils import get_mpesa_access_token
+from django.views.decorators.csrf import csrf_exempt
+from .mpesa import stk_push_request
 from django.contrib.auth.mixins import LoginRequiredMixin
 from io import BytesIO
 from django.http import HttpResponse
@@ -776,70 +777,34 @@ def global_search(request):
         "user_results": user_results
     })
 
-
-def stk_push_payment(request, pk):
-    customer = get_object_or_404(Customer, pk=pk)
-
+@csrf_exempt
+def initiate_payment(request):
     if request.method == "POST":
-        phone_number = request.POST.get("phone_number")
-        amount = int(customer.total_cost)
-        access_token = get_mpesa_access_token()
-        timestamp = now().strftime("%Y%m%d%H%M%S")
-        password = base64.b64encode((settings.MPESA_SHORTCODE + settings.MPESA_PASSKEY + timestamp).encode()).decode()
+        try:
+            data = json.loads(request.body)
+            phone_number = data.get("phone_number")
+            amount = data.get("amount")
 
-        url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "BusinessShortCode": settings.MPESA_SHORTCODE,
-            "Password": password,
-            "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
-            "Amount": amount,
-            "PartyA": phone_number,
-            "PartyB": settings.MPESA_SHORTCODE,
-            "PhoneNumber": phone_number,
-            "CallBackURL": settings.MPESA_CALLBACK_URL,
-            "AccountReference": customer.vehicle_number,
-            "TransactionDesc": "Parking Fee Payment",
-        }
+            if not phone_number or not amount:
+                return JsonResponse({"error": "Phone number and amount are required"}, status=400)
 
-        response = requests.post(url, json=payload, headers=headers)
-        response_data = response.json()
+            response = stk_push_request(phone_number, amount)
+            return JsonResponse(response)
 
-        # Print response in Django terminal
-        print("STK Push Response:", json.dumps(response_data, indent=4))
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
 
-        if response_data.get("ResponseCode") == "0":
-            messages.success(request, "Payment request sent. Check your phone to complete payment.")
-        else:
-            messages.error(request, f"Payment failed: {response_data.get('errorMessage', 'Unknown error')}")
+    return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
 
-        return redirect("payment", pk=pk)
-
-    return render(request, "payment.html", {"customer": customer})
-
-def mpesa_stk_callback(request):
-    """Handles M-Pesa STK Push callback"""
-    data = json.loads(request.body)
-
-    if data["Body"]["stkCallback"]["ResultCode"] == 0:
-        phone = data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][4]["Value"]
-        amount = data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][0]["Value"]
-        receipt_number = data["Body"]["stkCallback"]["CallbackMetadata"]["Item"][1]["Value"]
-
-        customer = Customer.objects.filter(phone_number=phone, is_paid=False).first()
-
-        if customer:
-            Payment.objects.create(
-                customer=customer,
-                amount_paid=amount,
-                mpesa_receipt_number=receipt_number,
-                status="Completed",
-            )
-            customer.is_paid = True
-            customer.save()
-
-    return JsonResponse({"status": "Success"})
+@csrf_exempt
+def mpesa_callback(request):
+    """Handle M-Pesa STK push callback"""
+    if request.method == "POST":
+        mpesa_response = json.loads(request.body)
+        print("M-Pesa Callback:", mpesa_response)
+        
+        # TODO: Process the callback response and update the database
+        
+        return JsonResponse({"message": "Callback received"}, status=200)
+    
+    return JsonResponse({"error": "Invalid request"}, status=400)
