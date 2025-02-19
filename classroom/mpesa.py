@@ -27,7 +27,7 @@ def stk_push_request(phone_number=254716454678, amount=5):
         "TransactionType": "CustomerPayBillOnline",
         "Amount": amount,
         "PartyA": phone_number,  
-        "PartyB": business_shortcode,  # Paybill number
+        "PartyB": business_shortcode,  
         "PhoneNumber": phone_number,
         "CallBackURL": "https://yourdomain.com/mpesa/callback/",
         "AccountReference": "CarParking",
