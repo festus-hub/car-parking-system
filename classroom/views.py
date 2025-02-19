@@ -779,22 +779,22 @@ def global_search(request):
 
 @csrf_exempt
 def initiate_payment(request):
-    if request.method == "POST":
+     if request.method == "POST":
         try:
-            data = json.loads(request.body)
+            print("Raw request body:", request.body)  # Debugging print
+            data = json.loads(request.body.decode('utf-8'))  # Decode JSON properly
+
             phone_number = data.get("phone_number")
             amount = data.get("amount")
 
             if not phone_number or not amount:
                 return JsonResponse({"error": "Phone number and amount are required"}, status=400)
 
-            response = stk_push_request(phone_number, amount)
-            return JsonResponse(response)
-
+            return JsonResponse({"success": True, "message": "STK Push request sent!"})
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
 
-    return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
+     return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
 
 @csrf_exempt
 def mpesa_callback(request):

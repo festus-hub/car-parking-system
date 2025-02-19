@@ -4,7 +4,7 @@ import datetime
 import base64
 from .utils import get_access_token
 
-def stk_push_request(phone_number, amount):
+def stk_push_request(phone_number=254716454678, amount=5):
     access_token = get_access_token()  # Get access token
 
     api_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
@@ -26,7 +26,7 @@ def stk_push_request(phone_number, amount):
         "Timestamp": timestamp,
         "TransactionType": "CustomerPayBillOnline",
         "Amount": amount,
-        "PartyA": phone_number,  # Customer phone number
+        "PartyA": phone_number,  
         "PartyB": business_shortcode,  # Paybill number
         "PhoneNumber": phone_number,
         "CallBackURL": "https://yourdomain.com/mpesa/callback/",
