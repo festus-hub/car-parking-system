@@ -2,7 +2,7 @@ import requests
 import json
 import datetime
 import base64
-from .utils import get_access_token
+from classroom.utils import get_access_token
 
 def stk_push_request(phone_number=254716454678, amount=5):
     access_token = get_access_token()  # Get access token
