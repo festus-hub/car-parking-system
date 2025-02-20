@@ -43,6 +43,7 @@ from django.utils import timezone
 from django.core import serializers
 from django.conf import settings
 from django.utils.timezone import now
+import requests
 import os
 from .models import Customer,User
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -777,21 +778,73 @@ def global_search(request):
         "user_results": user_results
     })
 
+CONSUMER_KEY = "zyf22CG0suhcx2z8mvruUauQ5EsAqTY7DGL91CRjWgrQzBRC"
+CONSUMER_SECRET = "7SThoERwBcOYmIEnnA5iKBGL5yJ5OspDq2hbEOZaQgkLryX6R91yGPcVt1uLAr7v"
+SHORTCODE = "174379"  
+PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+CALLBACK_URL = "https://yourdomain.com/mpesa/callback/"
+
+def get_access_token():
+    auth_url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    auth_headers = {
+        "Authorization": f"Basic {base64.b64encode(f'{CONSUMER_KEY}:{CONSUMER_SECRET}'.encode()).decode()}"
+    }
+    
+    response = requests.get(auth_url, headers=auth_headers)
+    
+    if response.status_code == 200:
+        return response.json().get("access_token")
+    else:
+        return None
+    
+
 @csrf_exempt
 def initiate_payment(request):
      if request.method == "POST":
-        try:
+       try:
             print("Raw request body:", request.body)  # Debugging print
-            data = json.loads(request.body.decode('utf-8'))  # Decode JSON properly
+            data = json.loads(request.body)  
 
             phone_number = data.get("phone_number")
             amount = data.get("amount")
 
             if not phone_number or not amount:
-                return JsonResponse({"error": "Phone number and amount are required"}, status=400)
+                return JsonResponse({"error": "Phone number and amount are required"}, status=400) 
+            
+            if not phone_number.startswith("254") or len(phone_number) != 12:
+                return JsonResponse({"error": "Invalid phone number format. Use 2547XXXXXXXX"}, status=400)
 
-            return JsonResponse({"success": True, "message": "STK Push request sent!"})
-        except json.JSONDecodeError:
+            access_token = get_access_token()
+            if not access_token:
+                return JsonResponse({"error": "Failed to authenticate with M-Pesa"}, status=500)
+
+            # Generate Timestamp
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            
+            # Generate Password (Base64-encoded)
+            password = base64.b64encode(f"{SHORTCODE}{PASSKEY}{timestamp}".encode()).decode()
+            payload = {
+           "BusinessShortCode": SHORTCODE,
+           "Password": password,
+           "Timestamp": timestamp,
+           "TransactionType": "CustomerPayBillOnline",
+           "Amount": amount,
+           "PartyA": phone_number,  
+           "PartyB": SHORTCODE,  
+           "PhoneNumber": phone_number,
+           "CallBackURL": "https://yourdomain.com/mpesa/callback/",
+           "AccountReference": "CarParking",
+           "TransactionDesc": "Parking Payment"
+          }
+            stk_push_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+            response = requests.post(stk_push_url, json=payload, headers=headers)
+
+            return JsonResponse(response.json(), status=response.status_code)
+       except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
 
      return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
@@ -800,11 +853,37 @@ def initiate_payment(request):
 def mpesa_callback(request):
     """Handle M-Pesa STK push callback"""
     if request.method == "POST":
-        mpesa_response = json.loads(request.body)
-        print("M-Pesa Callback:", mpesa_response)
-        
-        # TODO: Process the callback response and update the database
-        
-        return JsonResponse({"message": "Callback received"}, status=200)
-    
-    return JsonResponse({"error": "Invalid request"}, status=400)
+        try:
+            mpesa_response = json.loads(request.body)
+            print("M-Pesa Callback:", mpesa_response)  # Debugging print
+
+            # Extract transaction details
+            result_code = mpesa_response["Body"]["stkCallback"]["ResultCode"]
+            result_desc = mpesa_response["Body"]["stkCallback"]["ResultDesc"]
+            checkout_request_id = mpesa_response["Body"]["stkCallback"]["CheckoutRequestID"]
+
+            # If payment was successful (ResultCode == 0)
+            if result_code == 0:
+                amount = mpesa_response["Body"]["stkCallback"]["CallbackMetadata"]["Item"][0]["Value"]
+                mpesa_receipt = mpesa_response["Body"]["stkCallback"]["CallbackMetadata"]["Item"][1]["Value"]
+                phone_number = mpesa_response["Body"]["stkCallback"]["CallbackMetadata"]["Item"][4]["Value"]
+
+                # Save payment details to database
+                Payment.objects.create(
+                    phone_number=phone_number,
+                    amount=amount,
+                    mpesa_receipt=mpesa_receipt,
+                    checkout_request_id=checkout_request_id,
+                    status="Completed"
+                )
+
+                return JsonResponse({"message": "Payment successful!", "receipt": mpesa_receipt}, status=200)
+            
+            else:
+                # Handle failed payment
+                return JsonResponse({"error": "Payment failed", "message": result_desc}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"error": "Invalid request", "details": str(e)}, status=400)
+
+    return JsonResponse({"error": "Invalid request method"}, status=400)

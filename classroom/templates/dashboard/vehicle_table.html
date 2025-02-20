@@ -6,20 +6,22 @@
                     <a href="">List Of Vehicles</a>
                 </li>
             </ol>
+
             <div class="card mb-3">
                 <div class="card-header">
-                    <i class="fas fa-table"></i>
-                    Information
+                    <i class="fas fa-table"></i> Information
                 </div>
                 <div class="card-body">
                     {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                             {{ message }}
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
                         </div>
                     {% endfor %}
+
                     <div class="table-responsive">
                         <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                            <thead>
+                            <thead class="thead-dark">
                                 <tr>
                                     <th>No</th>
                                     <th>First Name</th>
@@ -41,13 +43,11 @@
                                             <td>{{ customer.reg_date|date:"F j, Y" }}</td>
                                             <td>{{ customer.exit_date|date:"F j, Y" }}</td>
                                             <td>{{ customer.days_spent }}</td>
-                                            <td>{{ customer.total_cost }}</td>
-                                            <td>{{ customer.payment_method }}</td>
+                                            <td>Ksh {{ customer.total_cost }}</td>
                                             <td>
-                                                <!-- Dropdown to choose payment method -->
-                                                <form action="{% url 'update_payment_method' customer.pk %}" method="POST">
+                                                <form class="payment-form" data-id="{{ customer.pk }}">
                                                     {% csrf_token %}
-                                                    <select name="payment_method" class="form-control" onchange="this.form.submit()">
+                                                    <select name="payment_method" class="form-control payment-method">
                                                         <option value="M-Pesa" {% if customer.payment_method == 'M-Pesa' %}selected{% endif %}>M-Pesa</option>
                                                         <option value="Cash" {% if customer.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
                                                         <option value="Card" {% if customer.payment_method == 'Card' %}selected{% endif %}>Card</option>
@@ -58,52 +58,50 @@
                                             <td>{{ customer.payment_date|date:"F j, Y" }}</td>
 
                                             <td>
-                                                <button type="button" class="bs-modal read-book btn btn-sm btn-primary" data-form-url="{% url 'view_vehicle' customer.pk %}">
-                                                    <span class="fa fa-eye"></span>
+                                                <button type="button" class="btn btn-sm btn-primary view-vehicle" data-url="{% url 'view_vehicle' customer.pk %}">
+                                                    <span class="fa fa-eye"></span> View
                                                 </button>
 
-                                                <a class="btn btn-sm btn-success" href="{% url 'pay' customer.pk %}">
+                                                <button class="btn btn-sm btn-success pay-button" data-id="{{ customer.pk }}" data-amount="{{ customer.total_cost }}">
                                                     <span class="fas fa-comments-dollar"></span> Pay
-                                                </a>
-
-                                                <button type="button" class="update-book btn btn-sm btn-warning" data-form-url="{% url 'update_vehicle' customer.pk %}">
-                                                    <span class="fa fa-pencil"> Edit</span>
                                                 </button>
 
-                                                <button type="button" class="bs-modal delete-book btn btn-sm btn-danger" data-form-url="{% url 'delete_vehicle' customer.pk %}">
-                                                    <span class="fa fa-trash"> Delete</span>
+                                                <button type="button" class="btn btn-sm btn-warning update-vehicle" data-url="{% url 'update_vehicle' customer.pk %}">
+                                                    <span class="fa fa-pencil"></span> Edit
+                                                </button>
+
+                                                <button type="button" class="btn btn-sm btn-danger delete-vehicle" data-url="{% url 'delete_vehicle' customer.pk %}">
+                                                    <span class="fa fa-trash"></span> Delete
                                                 </button>
                                             </td>
                                         </tr>
                                     {% endfor %}
                                 {% else %}
                                     <tr>
-                                        <td colspan="8">No customers found.</td>
+                                        <td colspan="9" class="text-center">No customers found.</td>
                                     </tr>
                                 {% endif %}
                             </tbody>
                         </table>
 
                         {% if is_paginated %}
-                            <ul class="pagination">
+                            <ul class="pagination justify-content-center">
                                 {% if page_obj.has_previous %}
-                                    <li><a href="?page=1">First</a></li>
-                                    <li><a href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
-                                {% else %}
-                                    <li class="disabled"><span>&laquo;</span></li>
+                                    <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
+                                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
                                 {% endif %}
+
                                 {% for i in paginator.page_range %}
                                     {% if page_obj.number == i %}
-                                        <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+                                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
                                     {% else %}
-                                        <li><a href="?page={{ i }}">{{ i }}</a></li>
+                                        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
                                     {% endif %}
                                 {% endfor %}
+
                                 {% if page_obj.has_next %}
-                                    <li><a href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
-                                    <li><a href="?page={{ page_obj.paginator.num_pages }}">Last</a></li>
-                                {% else %}
-                                    <li class="disabled"><span>&raquo;</span></li>
+                                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+                                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a></li>
                                 {% endif %}
                             </ul>
                         {% endif %}
@@ -112,4 +110,75 @@
             </div>
         </div>
     </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".pay-button").forEach(button => {
+        button.addEventListener("click", function () {
+            let customerId = this.getAttribute("data-id");
+            let amount = this.getAttribute("data-amoun");
+            let phoneNumber = prompt("Enter your M-Pesa number (format: 2547XXXXXXXX):");
+
+            if (!phoneNumber || !phoneNumber.startsWith("2547") || phoneNumber.length !== 12) {
+                alert("Invalid phone number format! Use 2547XXXXXXXX.");
+                return;
+            }
+
+            fetch(`/mpesa/pay/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    customer_id: customerId,
+                    phone_number: phoneNumber,
+                    amount: 1
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || "Payment request sent!");
+            })
+            .catch(error => console.error("Error:", error));
+        });
+    });
+
+    document.querySelectorAll(".payment-form .payment-method").forEach(select => {
+        select.addEventListener("change", function () {
+            let customerId = this.closest(".payment-form").getAttribute("data-id");
+            let paymentMethod = this.value;
+
+            fetch(`/update_payment_method/${customerId}/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({ payment_method: paymentMethod }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || "Payment method updated!");
+            })
+            .catch(error => console.error("Error:", error));
+        });
+    });
+});
+
+// Function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        document.cookie.split(';').forEach(cookie => {
+            let trimmedCookie = cookie.trim();
+            if (trimmedCookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(trimmedCookie.substring(name.length + 1));
+            }
+        });
+    }
+    return cookieValue;
+}
+</script>
+
 {% endblock %}
