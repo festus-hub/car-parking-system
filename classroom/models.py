@@ -47,6 +47,10 @@ class Meta:
 class Payment(models.Model):
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE)    
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    phone_number = models.CharField(max_length=15)
+    mpesa_receipt = models.CharField(max_length=100, unique=True)
+    checkout_request_id = models.CharField(max_length=100, unique=True)
+    status = models.CharField(max_length=20, choices=[("Pending", "Pending"), ("Completed", "Completed"), ("Failed", "Failed")], default="Pending")
     payment_method = models.CharField(max_length=50, null= True,blank= True,choices=[
         ('Mpesa', 'Mpesa'),
         ('Credit Card', 'Credit Card'),

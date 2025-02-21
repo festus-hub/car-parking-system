@@ -854,21 +854,40 @@ def mpesa_callback(request):
     """Handle M-Pesa STK push callback"""
     if request.method == "POST":
         try:
-            mpesa_response = json.loads(request.body)
-            print("M-Pesa Callback:", mpesa_response)  # Debugging print
+            raw_body = request.body.decode("utf-8")
+            print("Raw M-Pesa Callback Body:", raw_body)  # Debugging print
+            
+            mpesa_response = json.loads(raw_body)
+            print("Parsed M-Pesa Callback:", mpesa_response)  # Debugging print
 
-            # Extract transaction details
-            result_code = mpesa_response["Body"]["stkCallback"]["ResultCode"]
-            result_desc = mpesa_response["Body"]["stkCallback"]["ResultDesc"]
-            checkout_request_id = mpesa_response["Body"]["stkCallback"]["CheckoutRequestID"]
+            result_code = mpesa_response.get("Body", {}).get("stkCallback", {}).get("ResultCode", None)
+            result_desc = mpesa_response.get("Body", {}).get("stkCallback", {}).get("ResultDesc", "")
+            checkout_request_id = mpesa_response.get("Body", {}).get("stkCallback", {}).get("CheckoutRequestID", "")
+
+            # Handle different transaction results
+            if result_code is None:
+                return JsonResponse({"error": "Missing ResultCode"}, status=400)
+
+            # Extract Callback Metadata
+            callback_metadata = mpesa_response.get("Body", {}).get("stkCallback", {}).get("CallbackMetadata", {}).get("Item", [])
+
+            amount = None
+            mpesa_receipt = None
+            phone_number = None
+
+            for item in callback_metadata:
+                name = item.get("Name", "")
+                value = item.get("Value", "")
+
+                if name == "Amount":
+                    amount = value
+                elif name == "MpesaReceiptNumber":
+                    mpesa_receipt = value
+                elif name == "PhoneNumber":
+                    phone_number = value
 
             # If payment was successful (ResultCode == 0)
             if result_code == 0:
-                amount = mpesa_response["Body"]["stkCallback"]["CallbackMetadata"]["Item"][0]["Value"]
-                mpesa_receipt = mpesa_response["Body"]["stkCallback"]["CallbackMetadata"]["Item"][1]["Value"]
-                phone_number = mpesa_response["Body"]["stkCallback"]["CallbackMetadata"]["Item"][4]["Value"]
-
-                # Save payment details to database
                 Payment.objects.create(
                     phone_number=phone_number,
                     amount=amount,
@@ -880,10 +899,11 @@ def mpesa_callback(request):
                 return JsonResponse({"message": "Payment successful!", "receipt": mpesa_receipt}, status=200)
             
             else:
-                # Handle failed payment
                 return JsonResponse({"error": "Payment failed", "message": result_desc}, status=400)
 
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
         except Exception as e:
-            return JsonResponse({"error": "Invalid request", "details": str(e)}, status=400)
+            return JsonResponse({"error": "Error processing callback", "details": str(e)}, status=400)
 
     return JsonResponse({"error": "Invalid request method"}, status=400)
