@@ -12,6 +12,7 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('signup/', views.signup, name='signup'),
     path('parking_lot/', views.parking_lot, name='parking_lot'),
+    path('park-car/<int:location_id>/', views.ParkCarView.as_view(), name='park_vehicle'), 
     path('vehicle-location/<str:license_plate>/', views.vehicle_location, name='vehicle-location'),
     path('pay/<int:pk>', views.Pay, name='pay'),
     path('dashboard/', views.dashboard, name='dashboard'),

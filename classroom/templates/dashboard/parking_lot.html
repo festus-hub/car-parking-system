@@ -2,20 +2,18 @@
 
 {% block content %}
   <h1>Parking Lot</h1>
-
-  <h2>All Parking Locations</h2>
   <div>
     {% for location in locations %}
       <div class="parking-spot">
         <h3>{{ location.name }}</h3>
         <p>Status: {% if location.is_occupied %}Occupied{% else %}Available{% endif %}</p>
 
-        {% if location.is_occupied %}
-          <p>Parked by: {{ location.vehicle.license_plate }} - 
-            <a href="{% url 'vehicle_location' vehicle_id=location.vehicle.id %}">View Location</a>
-          </p>
+        {% if not location.is_occupied %}
+          <button class="park-button" data-car-id="{{ user_vehicle.id }}" data-location-id="{{ location.id }}">
+            Park Here
+          </button>
         {% else %}
-          <a href="{% url 'park_vehicle' location_id=location.id %}">Park Here</a>
+          <p>Occupied by {{ location.vehicle.license_plate }}</p>
         {% endif %}
         
         <hr>
@@ -24,13 +22,38 @@
       <p>No parking locations available at the moment.</p>
     {% endfor %}
   </div>
+{% endblock %}
 
-  {% if vehicle %}
-    <h2>Your Vehicle Location</h2>
-    <p>Your vehicle with license plate {{ vehicle.license_plate }} is parked at:</p>
-    <p>Parking Spot: {{ vehicle.parking_location.name }}</p>
-    <p>Parked at: {{ vehicle.parked_at|date:"F j, Y, g:i a" }}</p>
-  {% else %}
-    <p>You do not have any vehicle parked currently.</p>
-  {% endif %}
+{% block extra_js %}
+<script>
+ document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".park-button").forEach(button => {
+        button.addEventListener("click", function () {
+            let carId = this.getAttribute("data-car-id");
+            let locationId = this.getAttribute("data-location-id");
+
+            console.log("🚀 Sending Car ID:", carId, "Location ID:", locationId); // Debugging
+
+            if (!carId) {
+                console.error("🚨 No car ID found! Make sure `data-car-id` is correctly set.");
+                return;
+            }
+
+            fetch(`/park-car/${locationId}/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({ car_id: carId })
+            })
+            .then(response => response.json())
+            .then(data => console.log("✅ Response:", data))
+            .catch(error => console.error("🔥 Error:", error));
+        });
+    });
+});
+
+  </script>
+  
 {% endblock %}

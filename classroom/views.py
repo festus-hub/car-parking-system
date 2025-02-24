@@ -567,16 +567,11 @@ def track_vehicle(request, pk):
 
 
 def parking_lot(request):
-    # Fetch all parking locations
+    from classroom.models import Vehicle
     locations = ParkingLocation.objects.all()
-    
-    # If you want to track a specific vehicle's location
-    vehicle_id = request.GET.get('vehicle_id')  # Get the vehicle ID from the query parameters
-    vehicle = None
-    if vehicle_id:
-        vehicle = get_object_or_404(Vehicle, id=vehicle_id)
-    
-    return render(request, 'dashboard/parking_lot.html', {'locations': locations, 'vehicle': vehicle})
+    user_vehicle = Vehicle.objects.filter(owner=request.user).first()  # Get the user's vehicle
+    return render(request, 'dashboard/parking_lot.html', {"locations": locations, "user_vehicle": user_vehicle})
+
 
 def vehicle_location(request, license_plate):
     vehicle = get_object_or_404(VehicleLocation, license_plate=license_plate)    
@@ -608,24 +603,27 @@ def update_car(request, pk):
 
 #     return render(request, 'dashboard/payment.html')
 class ParkCarView(APIView):
-    def post(self, request):
-        car_id = request.data.get("car_id")
-        space_id = request.data.get("space_id")
+    def post(self, request, location_id):  # ✅ Accept location_id
+        car_id = request.data.get("car_id")  # ✅ Ensure car_id is received
+
+        if not car_id:
+            return Response({"error": "Car ID is missing"}, status=400)  # 🔥 Prevent missing car_id
+
         try:
             car = Vehicle.objects.get(id=car_id)
-            space = ParkingLocation.objects.get(id=space_id)
+            space = ParkingLocation.objects.get(id=location_id)
+
             if not space.is_occupied:
                 car.parked_at = space
                 car.save()
                 space.is_occupied = True
                 space.save()
-
-                # Send notification
-                self.send_parking_notification(car.phone_number, car.license_plate, space.space_number)
                 return Response({"message": "Car parked successfully"})
             return Response({"error": "Space is already occupied"}, status=400)
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
+        except Vehicle.DoesNotExist:
+            return Response({"error": "Vehicle not found"}, status=404)
+        except ParkingLocation.DoesNotExist:
+            return Response({"error": "Parking location not found"}, status=404)
 
 def send_parking_notification(request, parking_spot_id):
     # Email configuration
