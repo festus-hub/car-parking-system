@@ -832,7 +832,7 @@ def initiate_payment(request):
            "PartyA": phone_number,  
            "PartyB": SHORTCODE,  
            "PhoneNumber": phone_number,
-           "CallBackURL": "https://yourdomain.com/mpesa/callback/",
+           "CallBackURL": "https://df0c-41-139-202-31.ngrok-free.app/mpesa/callback/",
            "AccountReference": "CarParking",
            "TransactionDesc": "Parking Payment"
           }
@@ -856,8 +856,9 @@ def mpesa_callback(request):
         try:
             # Load JSON response from M-Pesa
             mpesa_response = json.loads(request.body)
-            print("M-Pesa Callback Received:", json.dumps(mpesa_response, indent=4))  # Debugging print
+            print("✅ M-Pesa Callback Received:", json.dumps(mpesa_response, indent=4))
 
+            # Extract transaction details
             result_code = mpesa_response["Body"]["stkCallback"]["ResultCode"]
             result_desc = mpesa_response["Body"]["stkCallback"]["ResultDesc"]
             checkout_request_id = mpesa_response["Body"]["stkCallback"]["CheckoutRequestID"]
@@ -866,19 +867,22 @@ def mpesa_callback(request):
             if result_code == 0:
                 metadata = mpesa_response["Body"]["stkCallback"]["CallbackMetadata"]["Item"]
 
-                # Debugging: Print metadata to see the structure
-                print("Callback Metadata:", metadata)
+                print("✅ Callback Metadata:", metadata)
 
                 # Extract values safely
-                amount = next((item["Value"] for item in metadata if item["Name"] == "Amount"), 0)
+                amount = next((item["Value"] for item in metadata if item["Name"] == "Amount"), None)
                 mpesa_receipt = next((item["Value"] for item in metadata if item["Name"] == "MpesaReceiptNumber"), None)
                 phone_number = next((item["Value"] for item in metadata if item["Name"] == "PhoneNumber"), None)
 
-                # Debugging: Print extracted values
-                print(f"Saving Payment: Phone={phone_number}, Amount={amount}, Receipt={mpesa_receipt}")
+                print(f"✅ Saving Payment: Phone={phone_number}, Amount={amount}, Receipt={mpesa_receipt}")
+
+                # Ensure values are not None before saving
+                if not all([mpesa_receipt, phone_number, amount]):
+                    print("❌ Missing essential data, payment not saved.")
+                    return JsonResponse({"error": "Missing data in callback"}, status=400)
 
                 # Save payment details to database
-                Payment.objects.create(
+                payment = Payment.objects.create(
                     phone_number=phone_number,
                     amount=amount,
                     mpesa_receipt=mpesa_receipt,
@@ -886,13 +890,15 @@ def mpesa_callback(request):
                     status="Completed"
                 )
 
+                print(f"✅ Payment Saved! ID: {payment.id}")
                 return JsonResponse({"message": "Payment successful!", "receipt": mpesa_receipt}, status=200)
 
             else:
+                print(f"❌ Payment Failed: {result_desc}")
                 return JsonResponse({"error": "Payment failed", "message": result_desc}, status=400)
 
         except Exception as e:
-            print(f"Error processing M-Pesa callback: {e}")
+            print(f"❌ Error processing M-Pesa callback: {e}")
             return JsonResponse({"error": "Invalid request", "details": str(e)}, status=400)
 
     return JsonResponse({"error": "Invalid request method"}, status=400)

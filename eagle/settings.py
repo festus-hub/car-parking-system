@@ -27,10 +27,11 @@ DEBUG = True
 # ALLOWED_HOSTS = ['*']
 
 ALLOWED_HOSTS = [
-    "bd50-41-139-202-31.ngrok-free.app",
+    "df0c-41-139-202-31.ngrok-free.app",
     "your-vercel-app-url.vercel.app",
     "localhost",
-    "127.0.0.1"
+    "127.0.0.1",
+    "testserver"
 ]
 
 
@@ -52,7 +53,7 @@ INSTALLED_APPS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://bd50-41-139-202-31.ngrok-free.app",
+    "https://df0c-41-139-202-31.ngrok-free.app",
     "https://your-vercel-app-url.vercel.app"  # Add your Vercel domain here
 ]
 
@@ -185,7 +186,7 @@ MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c91
 
 MPESA_INITIATOR_USERNAME = 'testapi'
 
-MPESA_CALLBACK_URL = "https://yourdomain.com/mpesa/callback/"
+MPESA_CALLBACK_URL = " https://df0c-41-139-202-31.ngrok-free.app"
 
 
 MPESA_INITIATOR_SECURITY_CREDENTIAL = 'Safaricom999!*!'
