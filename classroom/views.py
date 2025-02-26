@@ -515,22 +515,39 @@ class CustomerListView(ListView):
         # ordering = self.request.GET.get('ordering', 'name')
         return Customer.objects.all().order_by('reg_date')
 
-def park_vehicle(request, vehicle_id, location_id):
-    try:
-        vehicle = Vehicle.objects.get(id=vehicle_id)
-        location = ParkingLocation.objects.get(id=location_id)
-    except Vehicle.DoesNotExist:
-        raise Http404("Vehicle not found")
-    except ParkingLocation.DoesNotExist:
-        raise Http404("Parking location not found")
-    
-    if location.is_occupied:
-        return render(request, 'error.html', {'message': 'Parking spot is already occupied.'})
+@csrf_exempt
+def park_vehicle(request, location_id):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            car_id = data.get("car_id")
 
-    vehicle.parking_location = location
-    vehicle.save()
-    location.is_occupied = True
-    location.save()
+            # Ensure both IDs are provided
+            if not car_id or not location_id:
+                return JsonResponse({"error": "Missing car_id or location_id"}, status=400)
+
+            # Fetch the vehicle and parking location
+            vehicle = Vehicle.objects.get(id=car_id)
+            parking_spot = VehicleLocation.objects.get(id=location_id)
+
+            # Check if already occupied
+            if parking_spot.is_occupied:
+                return JsonResponse({"error": "Parking spot is already occupied"}, status=400)
+
+            # Assign vehicle to parking spot
+            parking_spot.vehicle = vehicle
+            parking_spot.is_occupied = True
+            parking_spot.save()
+
+            return JsonResponse({"message": "Vehicle parked successfully!"})
+        except Vehicle.DoesNotExist:
+            return JsonResponse({"error": "Vehicle not found"}, status=404)
+        except VehicleLocation.DoesNotExist:
+            return JsonResponse({"error": "Parking location not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
     return render(request, 'dashboard/park_vehicle.html', {'vehicle': vehicle, 'location': location})
 def unpark_vehicle(request, pk):
