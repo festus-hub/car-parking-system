@@ -111,7 +111,7 @@ class VehicleLocation(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # This establishes a one-to-many relationship with the User model
+    user = models.OneToOneField(User, on_delete=models.CASCADE)  # ✅ Add this field
     town = models.CharField(max_length=100)
 
     def __str__(self):

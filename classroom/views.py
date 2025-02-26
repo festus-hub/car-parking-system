@@ -516,40 +516,28 @@ class CustomerListView(ListView):
         return Customer.objects.all().order_by('reg_date')
 
 @csrf_exempt
-def park_vehicle(request, location_id):
+def park_vehicle(request):
     if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            car_id = data.get("car_id")
+        location_id = request.POST.get("location_id")
+        location = get_object_or_404(ParkingLocation, id=location_id)
 
-            # Ensure both IDs are provided
-            if not car_id or not location_id:
-                return JsonResponse({"error": "Missing car_id or location_id"}, status=400)
+        # Ensure the spot is available
+        if location.status == "Occupied":
+            return JsonResponse({"error": "Spot already occupied"}, status=400)
 
-            # Fetch the vehicle and parking location
-            vehicle = Vehicle.objects.get(id=car_id)
-            parking_spot = VehicleLocation.objects.get(id=location_id)
+        # Assign parking spot to user
+        vehicle, _ = VehicleLocation.objects.get_or_create(owner=request.user)
+        vehicle.parking_spot = location
+        vehicle.save()
 
-            # Check if already occupied
-            if parking_spot.is_occupied:
-                return JsonResponse({"error": "Parking spot is already occupied"}, status=400)
+        # Update status only when a car is parked
+        location.status = "Occupied"
+        location.save()
 
-            # Assign vehicle to parking spot
-            parking_spot.vehicle = vehicle
-            parking_spot.is_occupied = True
-            parking_spot.save()
+        return JsonResponse({"message": f"Parked at {location.name}", "status": "Occupied"})
+    
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
-            return JsonResponse({"message": "Vehicle parked successfully!"})
-        except Vehicle.DoesNotExist:
-            return JsonResponse({"error": "Vehicle not found"}, status=404)
-        except VehicleLocation.DoesNotExist:
-            return JsonResponse({"error": "Parking location not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-
-    return JsonResponse({"error": "Invalid request method"}, status=405)
-
-    return render(request, 'dashboard/park_vehicle.html', {'vehicle': vehicle, 'location': location})
 def unpark_vehicle(request, pk):
     vehicle = Vehicle.objects.get(pk=pk)
     parking_location = vehicle.parked_at
@@ -584,9 +572,8 @@ def track_vehicle(request, pk):
 
 
 def parking_lot(request):
-    from classroom.models import Vehicle
     locations = ParkingLocation.objects.all()
-    user_vehicle = Vehicle.objects.filter(owner=request.user).first()  # Get the user's vehicle
+    user_vehicle = VehicleLocation.objects.filter(user=request.user).first()  # Get the user's vehicle
     return render(request, 'dashboard/parking_lot.html', {"locations": locations, "user_vehicle": user_vehicle})
 
 

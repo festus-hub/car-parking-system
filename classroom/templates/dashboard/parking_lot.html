@@ -1,93 +1,52 @@
-{% extends 'dashboard/base.html' %}
-
 {% block content %}
-  <h1>Parking Lot</h1>
-  <div>
-    {% for location in locations %}
+<h2>Parking Lot</h2>
+{% if user_vehicle %}
+    <p>You have parked at: {{ user_vehicle.parking_spot.name }}</p>
+{% else %}
+    <p>You have not parked yet.</p>
+{% endif %}
+
+<div id="parking-container">
+  {% for location in locations %}
       <div class="parking-spot">
-        <h3>{{ location.name }}</h3>
-        <p>Status: {% if location.is_occupied %}Occupied{% else %}Available{% endif %}</p>
-
-        {% if not location.is_occupied %}
-          <button class="park-button" 
-                  data-car-id="{{ user_vehicle.id }}" 
-                  data-location-id="{{ location.id }}">
-            Park Here
-          </button>
-        {% else %}
-          <p>Occupied by {{ location.vehicle.license_plate }}</p>
-        {% endif %}
-        
-        <hr>
+          <h3>{{ location.name }}</h3>
+          <p>Status: <span id="status-{{ location.id }}">{{ location.status }}</span></p>
+          {% if location.section == "Available" %}
+              <button class="park-here-btn" data-location="{{ location.id }}">Park Here</button>
+          {% else %}
+              <button enabled>Occupied</button>
+          {% endif %}
       </div>
-    {% empty %}
-      <p>No parking locations available at the moment.</p>
-    {% endfor %}
-  </div>
-{% endblock %}
+  {% endfor %}
+</div>
 
-{% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    console.log("✅ JavaScript Loaded!"); // Debugging: Ensure JS is running
-
-    // Check if buttons exist
-    let buttons = document.querySelectorAll(".park-button");
-    console.log("🔍 Found buttons:", buttons.length);
-
-    // If no buttons are found, stop execution
-    if (buttons.length === 0) {
-        console.error("🚨 No buttons found! Check if the HTML is loading correctly.");
-        return;
-    }
-
-    // Attach click event to each button
-    buttons.forEach(button => {
-        button.addEventListener("click", function () {
-            let carId = this.getAttribute("data-car-id");
-            let locationId = this.getAttribute("data-location-id");
-
-            console.log("🚗 Car ID:", carId, "📍 Location ID:", locationId); // Debugging
-
-            if (!carId || !locationId) {
-                console.error("🚨 Missing car ID or location ID!");
-                return;
-            }
-
-            fetch(`/park-car/${locationId}/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                },
-                body: JSON.stringify({ car_id: carId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("✅ Response:", data);
-                alert("Car successfully parked!");
-                location.reload(); // Reload page to update status
-            })
-            .catch(error => console.error("🔥 Error:", error));
-        });
-    });
-
-});
-
-// Function to get CSRF Token
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        let cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            let cookie = cookies[i].trim();
-            if (cookie.startsWith(name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-</script>
+  document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".park-here-btn").forEach(button => {
+          button.addEventListener("click", function () {
+              let locationId = this.getAttribute("data-location");
+  
+              fetch("{% url 'park_vehicle' %}", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/x-www-form-urlencoded",
+                      "X-CSRFToken": "{{ csrf_token }}"
+                  },
+                  body: "location_id=" + locationId
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.message) {
+                      alert(data.message);
+                      document.getElementById("status-" + locationId).innerText = "Occupied";
+                      location.reload();
+                  } else {
+                      alert("Error: " + data.error);
+                  }
+              })
+              .catch(error => console.error("Error:", error));
+          });
+      });
+  });
+  </script>
 {% endblock %}
