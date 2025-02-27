@@ -65,6 +65,8 @@ class Payment(models.Model):
 class ParkingLocation(models.Model):
     name = models.CharField(max_length=100)  # Name of the parking area/slot
     section = models.CharField(max_length=50, null=True, blank=True)  # Section/Zone, if applicable
+    status = models.CharField(max_length=20, choices=[("Available", "Available"), ("Occupied", "Occupied")], default="Available")
+
     is_occupied = models.BooleanField(default=False)  # Occupied status
 
     def __str__(self):

@@ -1,52 +1,79 @@
+{% extends "dashboard/base.html" %}
+
 {% block content %}
-<h2>Parking Lot</h2>
-{% if user_vehicle %}
-    <p>You have parked at: {{ user_vehicle.parking_spot.name }}</p>
+<h1>Parking Lot</h1>
+
+<!-- Show a message if there are no parking spots -->
+{% if parking_slots %}
+<table border="1">
+    <thead>
+        <tr>
+            <th>Spot</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for spot in parking_slots %}
+        <tr>
+            <td>{{ spot.name }}</td>
+            <td>
+                {% if spot.is_occupied %}
+                    <span style="color: red; font-weight: bold;">Occupied</span>
+                {% else %}
+                    <span style="color: green; font-weight: bold;">Available</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if not spot.is_occupied %}
+                    <button class="park-btn" data-location="{{ spot.id }}">Park Here</button>
+                {% else %}
+                    <span style="color: gray;">N/A</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% else %}
-    <p>You have not parked yet.</p>
+<p>No parking slots available.</p>
 {% endif %}
 
-<div id="parking-container">
-  {% for location in locations %}
-      <div class="parking-spot">
-          <h3>{{ location.name }}</h3>
-          <p>Status: <span id="status-{{ location.id }}">{{ location.status }}</span></p>
-          {% if location.section == "Available" %}
-              <button class="park-here-btn" data-location="{{ location.id }}">Park Here</button>
-          {% else %}
-              <button enabled>Occupied</button>
-          {% endif %}
-      </div>
-  {% endfor %}
-</div>
+<!-- CSRF Token Meta Tag -->
+<meta name="csrf-token" content="{{ csrf_token }}">
 
+<!-- JavaScript for handling the "Park Here" button click -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-      document.querySelectorAll(".park-here-btn").forEach(button => {
-          button.addEventListener("click", function () {
-              let locationId = this.getAttribute("data-location");
-  
-              fetch("{% url 'park_vehicle' %}", {
-                  method: "POST",
-                  headers: {
-                      "Content-Type": "application/x-www-form-urlencoded",
-                      "X-CSRFToken": "{{ csrf_token }}"
-                  },
-                  body: "location_id=" + locationId
-              })
-              .then(response => response.json())
-              .then(data => {
-                  if (data.message) {
-                      alert(data.message);
-                      document.getElementById("status-" + locationId).innerText = "Occupied";
-                      location.reload();
-                  } else {
-                      alert("Error: " + data.error);
-                  }
-              })
-              .catch(error => console.error("Error:", error));
-          });
-      });
-  });
-  </script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Fetch CSRF token from the meta tag
+        const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+
+        document.querySelectorAll(".park-btn").forEach(function(button) {
+            button.addEventListener("click", function() {
+                let locationId = this.getAttribute("data-location");
+                console.log("Clicked button, location ID:", locationId); // Debugging log
+
+                fetch("/park-car/", { 
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken // ✅ Dynamically set CSRF token
+                    },
+                    body: JSON.stringify({ "location_id": locationId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Vehicle parked successfully!");
+                        location.reload(); // Refresh to update status
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+            });
+        });
+    });
+</script>
+
 {% endblock %}

@@ -2,6 +2,7 @@ import base64
 import json
 from django.shortcuts import redirect, render, get_object_or_404
 import requests
+from rest_framework import status
 from .models import Vehicle, ParkingLocation, VehicleLocation
 from .forms import VehicleLocationForm
 from classroom.models import Vehicle
@@ -517,26 +518,30 @@ class CustomerListView(ListView):
 
 @csrf_exempt
 def park_vehicle(request):
-    if request.method == "POST":
-        location_id = request.POST.get("location_id")
-        location = get_object_or_404(ParkingLocation, id=location_id)
+   if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            location_id = data.get("location_id")
+            location = ParkingLocation.objects.get(id=location_id)
 
-        # Ensure the spot is available
-        if location.status == "Occupied":
-            return JsonResponse({"error": "Spot already occupied"}, status=400)
+            if location.status == "Occupied":
+                return JsonResponse({"success": False, "message": "Parking spot already occupied."}, status=400)
 
-        # Assign parking spot to user
-        vehicle, _ = VehicleLocation.objects.get_or_create(owner=request.user)
-        vehicle.parking_spot = location
-        vehicle.save()
+            # Assign parking spot
+            vehicle = VehicleLocation.objects.filter(user=request.user).first()
+            if not vehicle:
+                return JsonResponse({"success": False, "message": "No vehicle found for this user."}, status=400)
 
-        # Update status only when a car is parked
-        location.status = "Occupied"
-        location.save()
+            location.status = "Occupied"
+            location.save()
 
-        return JsonResponse({"message": f"Parked at {location.name}", "status": "Occupied"})
-    
-    return JsonResponse({"error": "Invalid request"}, status=400)
+            vehicle.parking_slot = location
+            vehicle.save()
+
+            return JsonResponse({"success": True, "message": "Vehicle parked successfully."})
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=400)
+   return JsonResponse({"success": False, "message": "Invalid request method."}, status=405)
 
 def unpark_vehicle(request, pk):
     vehicle = Vehicle.objects.get(pk=pk)
@@ -572,9 +577,8 @@ def track_vehicle(request, pk):
 
 
 def parking_lot(request):
-    locations = ParkingLocation.objects.all()
-    user_vehicle = VehicleLocation.objects.filter(user=request.user).first()  # Get the user's vehicle
-    return render(request, 'dashboard/parking_lot.html', {"locations": locations, "user_vehicle": user_vehicle})
+    parking_slots = ParkingLocation.objects.all()
+    return render(request, 'dashboard/parking_lot.html', {'parking_slots':parking_slots})
 
 
 def vehicle_location(request, license_plate):
@@ -607,27 +611,31 @@ def update_car(request, pk):
 
 #     return render(request, 'dashboard/payment.html')
 class ParkCarView(APIView):
-    def post(self, request, location_id):  # ✅ Accept location_id
-        car_id = request.data.get("car_id")  # ✅ Ensure car_id is received
 
-        if not car_id:
-            return Response({"error": "Car ID is missing"}, status=400)  # 🔥 Prevent missing car_id
-
+      def post(self, request, *args, **kwargs):
         try:
-            car = Vehicle.objects.get(id=car_id)
-            space = ParkingLocation.objects.get(id=location_id)
+            print("Incoming request data:", request.data)  # Debugging
+            data = request.data  # Use DRF request.data instead of request.body
 
-            if not space.is_occupied:
-                car.parked_at = space
-                car.save()
-                space.is_occupied = True
-                space.save()
-                return Response({"message": "Car parked successfully"})
-            return Response({"error": "Space is already occupied"}, status=400)
-        except Vehicle.DoesNotExist:
-            return Response({"error": "Vehicle not found"}, status=404)
+            location_id = data.get("location_id")
+            if not location_id:
+                return JsonResponse({"error": "Missing location_id"}, status=400)
+
+            spot = ParkingLocation.objects.get(id=location_id)
+
+            if spot.status == "Occupied":
+                return JsonResponse({"error": "Spot already occupied"}, status=400)
+
+            spot.status = "Occupied"
+            spot.save()
+
+            return JsonResponse({"success": True, "message": f"Vehicle parked at {spot.name}"})
+
         except ParkingLocation.DoesNotExist:
-            return Response({"error": "Parking location not found"}, status=404)
+            return JsonResponse({"error": "Invalid parking spot"}, status=404)
+        except Exception as e:
+            print("🚨 ERROR:", str(e))  # Debugging line
+            return JsonResponse({"error": str(e)}, status=500)
 
 def send_parking_notification(request, parking_spot_id):
     # Email configuration
