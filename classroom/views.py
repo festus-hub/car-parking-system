@@ -852,7 +852,9 @@ def initiate_payment(request):
                 "Content-Type": "application/json"
             }
             response = requests.post(stk_push_url, json=payload, headers=headers)
-
+            if response.status_code == 200:
+                # Redirect to vehicle list page after initiating STK Push
+                return redirect("/vehicle/")
             return JsonResponse(response.json(), status=response.status_code)
        except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
