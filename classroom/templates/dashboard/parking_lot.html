@@ -1,79 +1,70 @@
-{% extends "dashboard/base.html" %}
+{% extends 'dashboard/base.html' %}
 
 {% block content %}
-<h1>Parking Lot</h1>
+<div class="container mt-4">
+    <h2 class="mb-3">Parking Lot Overview</h2>
 
-<!-- Show a message if there are no parking spots -->
-{% if parking_slots %}
-<table border="1">
-    <thead>
-        <tr>
-            <th>Spot</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for spot in parking_slots %}
-        <tr>
-            <td>{{ spot.name }}</td>
-            <td>
-                {% if spot.is_occupied %}
-                    <span style="color: red; font-weight: bold;">Occupied</span>
-                {% else %}
-                    <span style="color: green; font-weight: bold;">Available</span>
-                {% endif %}
-            </td>
-            <td>
-                {% if not spot.is_occupied %}
-                    <button class="park-btn" data-location="{{ spot.id }}">Park Here</button>
-                {% else %}
-                    <span style="color: gray;">N/A</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>No parking slots available.</p>
-{% endif %}
+    <table class="table table-striped table-bordered" id="parkingTable">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Vehicle Number</th>
+                <th>Owner</th>
+                <th>Parking Spot</th>
+                <th>Time In</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="parkingTableBody">
+            <!-- Data will be auto-filled here -->
+        </tbody>
+    </table>
+</div>
 
-<!-- CSRF Token Meta Tag -->
-<meta name="csrf-token" content="{{ csrf_token }}">
+<!-- Ensure jQuery & DataTables are loaded first -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 
-<!-- JavaScript for handling the "Park Here" button click -->
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Fetch CSRF token from the meta tag
-        const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+  $(document).ready(function () {
+    let table = $('#parkingTable').DataTable();
 
-        document.querySelectorAll(".park-btn").forEach(function(button) {
-            button.addEventListener("click", function() {
-                let locationId = this.getAttribute("data-location");
-                console.log("Clicked button, location ID:", locationId); // Debugging log
+    function fetchVehicles() {
+        $.ajax({
+            url: "{% url 'get_parked_vehicles' %}",
+            method: "GET",
+            dataType: "json",
+            success: function (data) {
+                console.log("Received data:", data);  // Debugging
 
-                fetch("/park-car/", { 
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": csrfToken // ✅ Dynamically set CSRF token
-                    },
-                    body: JSON.stringify({ "location_id": locationId })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert("Vehicle parked successfully!");
-                        location.reload(); // Refresh to update status
-                    } else {
-                        alert("Error: " + data.error);
-                    }
-                })
-                .catch(error => console.error("Error:", error));
-            });
+                table.clear();
+                let vehicles = data.vehicles;
+
+                if (vehicles.length === 0) {
+                    console.warn("No parked vehicles found.");
+                    table.row.add(["", "<b class='text-danger'>No parked vehicles</b>", "", "", "", ""]).draw();
+                } else {
+                    $.each(vehicles, function (index, vehicle) {
+                        console.log("Adding vehicle:", vehicle);  // Debugging
+                        table.row.add([
+                            index + 1,
+                            vehicle.number_plate || "N/A",
+                            vehicle.owner || "Unknown",
+                            vehicle.parking_spot || "Not Assigned",
+                            vehicle.time_in || "N/A",
+                            '<span class="badge bg-success">Parked</span>'
+                        ]).draw();
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("AJAX Error:", status, error);
+            }
         });
-    });
-</script>
+    }
 
+    fetchVehicles(); // Load data initially
+    setInterval(fetchVehicles, 5000); // Refresh every 5 seconds
+});
+</script>
 {% endblock %}

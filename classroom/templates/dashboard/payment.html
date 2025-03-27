@@ -1,68 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Details</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
-    <div class="container mt-5">
-        <h2>Payment Details for Customer #{{ customer.pk }}</h2>
+{% extends "base.html" %}
 
-        <form method="POST" action="{% url 'update_payment_method' pk=customer.pk %}">
-            {% csrf_token %}
-            
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Payment Transactions</h2>
+
+    <!-- Payment Transactions Table -->
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Phone Number</th>
+                <th>Amount</th>
+                <th>Transaction ID</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ payment.phone_number }}</td>
+                <td>KES {{ payment.amount }}</td>
+                <td>{{ payment.transaction_id }}</td>
+                <td>
+                    {% if payment.status == "Completed" %}
+                        <span class="badge bg-success">Completed</span>
+                    {% elif payment.status == "Pending" %}
+                        <span class="badge bg-warning">Pending</span>
+                    {% else %}
+                        <span class="badge bg-danger">Failed</span>
+                    {% endif %}
+                </td>
+                <td>{{ payment.created_at }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No payments found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Payment Form -->
+    <h3 class="mt-5">Payment Details for Customer #{{ customer.pk }}</h3>
+    <form method="POST" action="{% url 'update_payment_method' pk=customer.pk %}">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="payment_method">Payment Method</label>
+            <select name="payment_method" id="payment_method" class="form-control" required onchange="toggleMpesaInput()">
+                <option value="Cash" {% if customer.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
+                <option value="Card" {% if customer.payment_method == 'Card' %}selected{% endif %}>Card</option>
+                <option value="M-Pesa" {% if customer.payment_method == 'M-Pesa' %}selected{% endif %}>M-Pesa</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Amount</label>
+            <input type="number" name="amount" id="amount" class="form-control" value="{{ customer.total_cost }}" readonly>
+        </div>
+
+        <div id="mpesa-section" style="display: none;">
             <div class="form-group">
-                <label for="payment_method">Payment Method</label>
-                <select name="payment_method" id="payment_method" class="form-control" required onchange="toggleMpesaInput()">
-                    <option value="Cash" {% if customer.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
-                    <option value="Card" {% if customer.payment_method == 'Card' %}selected{% endif %}>Card</option>
-                    <option value="M-Pesa" {% if customer.payment_method == 'M-Pesa' %}selected{% endif %}>M-Pesa</option>
-                </select>
+                <label for="phone_number">Enter M-Pesa Phone Number:</label>
+                <input type="text" name="phone_number" id="phone_number" class="form-control"
+                       placeholder="e.g., 2547XXXXXXXX" pattern="2547[0-9]{8}" title="Enter a valid M-Pesa number (2547XXXXXXXX)">
             </div>
+            <button type="submit" formaction="{% url 'stk_push_payment' customer.pk %}" class="btn btn-success">
+                Pay with M-Pesa
+            </button>
+        </div>
 
-            <div class="form-group">
-                <label for="amount">Amount</label>
-                <input type="number" name="amount" id="amount" class="form-control" value="{{ customer.total_cost }}" readonly>
-            </div>
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary">Update Payment Method</button>
+        </div>
+    </form>
 
-            <div id="mpesa-section" style="display: none;">
-                <div class="form-group">
-                    <label for="phone_number">Enter M-Pesa Phone Number:</label>
-                    <input type="text" name="phone_number" id="phone_number" class="form-control" placeholder="e.g., 2547XXXXXXXX">
-                </div>
-                <button type="submit" formaction="{% url 'stk_push_payment' customer.pk %}" class="btn btn-success">Pay with M-Pesa</button>
-            </div>
+    {% if messages %}
+        <div class="alert alert-info mt-3">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
 
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Update Payment Method</button>
-            </div>
-        </form>
-
-        {% if messages %}
-            <div class="alert alert-info">
-                {% for message in messages %}
-                    <p>{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
-
-    <script>
-        function toggleMpesaInput() {
-            let paymentMethod = document.getElementById("payment_method").value;
-            let mpesaSection = document.getElementById("mpesa-section");
-            
-            if (paymentMethod === "M-Pesa") {
-                mpesaSection.style.display = "block";
-            } else {
-                mpesaSection.style.display = "none";
-            }
-        }
-    </script>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<script>
+    function toggleMpesaInput() {
+        let paymentMethod = document.getElementById("payment_method").value;
+        let mpesaSection = document.getElementById("mpesa-section");
+        mpesaSection.style.display = paymentMethod === "M-Pesa" ? "block" : "none";
+    }
+    document.addEventListener("DOMContentLoaded", toggleMpesaInput);
+</script>
+{% endblock %}

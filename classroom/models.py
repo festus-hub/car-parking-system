@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.html import escape, mark_safe
 from django.contrib.auth import get_user_model
+from django.utils.timezone import now
+
 
 
 
@@ -36,12 +38,30 @@ class Customer(models.Model):
     payment_date = models.DateTimeField(blank=True, null=True) 
     location =  models.CharField(default='',max_length=10)
     payment_method = models.CharField(max_length=100, blank=True, null=True)  
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
 class Meta:
     ordering = ['id']
+
+def calculate_total_cost(self):
+    if not self.entry_time:  # ✅ Ensure entry_time exists
+        return 0.00  
+
+    end_time = self.exit_time if self.exit_time else now()  # ✅ Use now() if exit_time is None
+
+    if not self.cost_per_hour:  # ✅ Ensure cost_per_hour exists
+        return 0.00  
+
+    duration = (end_time - self.entry_time).total_seconds() / 3600  # Convert to hours
+    return round(duration * self.cost_per_hour, 2) 
+
+def save(self, *args, **kwargs):
+        if self.exit_time:
+            self.total_cost = self.calculate_total_cost()
+        super().save(*args, **kwargs)
 
 
 class Payment(models.Model):
@@ -57,6 +77,7 @@ class Payment(models.Model):
         ('PayPal', 'PayPal')
     ])
     payment_date = models.DateTimeField(null=True, blank=True)
+    hours_parked = models.IntegerField()
     id = models.AutoField(primary_key=True)
 
     def _str_(self):

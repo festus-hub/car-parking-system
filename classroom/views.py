@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from twilio.rest import Client
 import stripe
+import logging
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Payment
@@ -54,7 +55,9 @@ from django.core.exceptions import ValidationError
 from . import models
 import operator
 import itertools
-from django.db.models import Sum
+from calendar import month_name
+from django.db.models.functions import ExtractMonth
+from django.db.models import Sum, Avg, F, ExpressionWrapper, fields
 from django.views.decorators.csrf import csrf_exempt
 from .mpesa import stk_push_request
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -85,22 +88,46 @@ def home(request):
 
 
 def dashboard(request):
-    total_it = Customer.objects.aggregate(Sum("total_cost"))
-
-    print(total_it.get("total_cost__sum"))
-    total_it = total_it.get("total_cost__sum")
-
-    total_cost = total_it
-    
     customers = Customer.objects.all()
 
-    total_vehicles = Customer.objects.all().count()
-    total_users = User.objects.all().count()
+    total_vehicles = customers.count()
+    total_users = customers.values("user").distinct().count()
+    total_cost = customers.aggregate(total=Sum("total_cost"))["total"] or 0
 
+    # Extract parking duration per month
+    data = (
+        Customer.objects.annotate(month=ExtractMonth("created_at"))
+        .values("month")
+        .annotate(
+            avg_parking_duration=Avg(
+                ExpressionWrapper(F("exit_date") - F("created_at"), output_field=fields.DurationField())
+            )
+        )
+    )
+    all_months = {month: 0 for month in range(1, 13)}
 
-    context = {'total_cost':total_cost, 'users':total_users, 'cars':total_vehicles,'customers': customers,}
-    return render(request, 'dashboard/dashboard.html', context)
+    for entry in data:
+     month_number = entry["month"]
+     avg_duration= entry["avg_parking_duration"]
+    
+    if month_number:
+        all_months[month_number] = avg_duration.total_seconds() / 3600 if avg_duration else 0
+    else:
+        all_months.append(datetime.now().strftime("%B"))
 
+    months = [month_name[m] for m in all_months.keys()]
+    parking_durations = list(all_months.values())
+    
+
+    context = {
+        "total_cost": total_cost,
+        "total_users": total_users,
+        "total_vehicles": total_vehicles,
+        "customers": customers,
+        "months": months,
+        "parking_durations": parking_durations,
+    }
+    return render(request, "dashboard/dashboard.html", context)
 
 def login(request):
     if request.method == 'POST':
@@ -136,21 +163,16 @@ def save_vehicle(request):
         last_name = request.POST['last_name']
         card_number = request.POST['card_number']
         car_model = request.POST['car_model']
-        car_color = request.POST['car_color']
         phone_number = request.POST['phone_number']
-        comment = request.POST['comment']
-        device = request.POST['device']
-        cost_per_day = request.POST['cost_per_day']
-        register_name = request.POST['register_name']
         current_time = datetime.now()
         date_time = current_time.strftime("%Y,%m,%d")
+        location = request.POST.get('location', None)
         email = request.POST['email']
-        location =request.POST['location']
 
-        a = Customer(first_name=first_name, last_name=last_name, card_number=card_number, car_model=car_model, car_color=car_color, reg_date=date_time,register_name=register_name,comment=comment, cost_per_day=cost_per_day, device=device, email=email, location=location)
+        a = Customer(first_name=first_name, last_name=last_name, card_number=card_number, car_model=car_model, reg_date=date_time, email=email,location=location)
         a.save()
 
-
+  
         send_mail(
         'Parking Spot Reserved',
         f'Hello {first_name} {last_name},\n\nYour parking spot has been successfully reserved.',
@@ -577,8 +599,9 @@ def track_vehicle(request, pk):
 
 
 def parking_lot(request):
-    parking_slots = ParkingLocation.objects.all()
-    return render(request, 'dashboard/parking_lot.html', {'parking_slots':parking_slots})
+    parked_vehicles = VehicleLocation.objects.all() 
+    # print("DEBUG: Parked Vehicles Data:", list(parked_vehicles))   
+    return render(request, 'dashboard/parking_lot.html', {'parked_vehicles': parked_vehicles})
 
 
 def vehicle_location(request, license_plate):
@@ -861,56 +884,95 @@ def initiate_payment(request):
 
      return JsonResponse({"error": "Only POST requests are allowed"}, status=405)
 
+logger = logging.getLogger(__name__)
+
 @csrf_exempt
 def mpesa_callback(request):
     """Handle M-Pesa STK push callback"""
-    if request.method == "POST":
-        try:
-            # Load JSON response from M-Pesa
-            mpesa_response = json.loads(request.body)
-            print("✅ M-Pesa Callback Received:", json.dumps(mpesa_response, indent=4))
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=400)
 
-            # Extract transaction details
-            result_code = mpesa_response["Body"]["stkCallback"]["ResultCode"]
-            result_desc = mpesa_response["Body"]["stkCallback"]["ResultDesc"]
-            checkout_request_id = mpesa_response["Body"]["stkCallback"]["CheckoutRequestID"]
+    try:
+        # Load JSON response from M-Pesa
+        mpesa_response = json.loads(request.body)
+        logger.info(f"✅ M-Pesa Callback Received: {json.dumps(mpesa_response, indent=4)}")
 
-            # If payment was successful (ResultCode == 0)
-            if result_code == 0:
-                metadata = mpesa_response["Body"]["stkCallback"]["CallbackMetadata"]["Item"]
+        # Extract transaction details
+        stk_callback = mpesa_response.get("Body", {}).get("stkCallback", {})
+        result_code = stk_callback.get("ResultCode")
+        result_desc = stk_callback.get("ResultDesc")
+        checkout_request_id = stk_callback.get("CheckoutRequestID")
 
-                print("✅ Callback Metadata:", metadata)
+        # Check if transaction was successful
+        if result_code == 0:
+            metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
+            logger.info(f"✅ Callback Metadata: {metadata}")
 
-                # Extract values safely
-                amount = next((item["Value"] for item in metadata if item["Name"] == "Amount"), None)
-                mpesa_receipt = next((item["Value"] for item in metadata if item["Name"] == "MpesaReceiptNumber"), None)
-                phone_number = next((item["Value"] for item in metadata if item["Name"] == "PhoneNumber"), None)
+            # Extract values safely
+            amount = next((item["Value"] for item in metadata if item["Name"] == "Amount"), None)
+            mpesa_receipt = next((item["Value"] for item in metadata if item["Name"] == "MpesaReceiptNumber"), None)
+            phone_number = next((item["Value"] for item in metadata if item["Name"] == "PhoneNumber"), None)
 
-                print(f"✅ Saving Payment: Phone={phone_number}, Amount={amount}, Receipt={mpesa_receipt}")
+            if not all([mpesa_receipt, phone_number, amount]):
+                logger.error("❌ Missing essential data, payment not saved.")
+                return JsonResponse({"error": "Missing data in callback"}, status=400)
 
-                # Ensure values are not None before saving
-                if not all([mpesa_receipt, phone_number, amount]):
-                    print("❌ Missing essential data, payment not saved.")
-                    return JsonResponse({"error": "Missing data in callback"}, status=400)
+            # Save payment details to the database
+            payment = Payment.objects.create(
+                phone_number=phone_number,
+                amount=amount,
+                mpesa_receipt=mpesa_receipt,
+                checkout_request_id=checkout_request_id,
+                status="Completed"
+            )
 
-                # Save payment details to database
-                payment = Payment.objects.create(
-                    phone_number=phone_number,
-                    amount=amount,
-                    mpesa_receipt=mpesa_receipt,
-                    checkout_request_id=checkout_request_id,
-                    status="Completed"
-                )
+            logger.info(f"✅ Payment Saved! ID: {payment.id}")
+            return JsonResponse({"message": "Payment successful!", "receipt": mpesa_receipt}, status=200)
 
-                print(f"✅ Payment Saved! ID: {payment.id}")
-                return JsonResponse({"message": "Payment successful!", "receipt": mpesa_receipt}, status=200)
+        else:
+            logger.warning(f"❌ Payment Failed: {result_desc}")
+            return JsonResponse({"error": "Payment failed", "message": result_desc}, status=400)
 
-            else:
-                print(f"❌ Payment Failed: {result_desc}")
-                return JsonResponse({"error": "Payment failed", "message": result_desc}, status=400)
+    except json.JSONDecodeError:
+        logger.error("❌ Invalid JSON received in callback")
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
 
-        except Exception as e:
-            print(f"❌ Error processing M-Pesa callback: {e}")
-            return JsonResponse({"error": "Invalid request", "details": str(e)}, status=400)
+    except Exception as e:
+        logger.exception(f"❌ Error processing M-Pesa callback: {e}")
+        return JsonResponse({"error": "Internal server error", "details": str(e)}, status=500)
 
-    return JsonResponse({"error": "Invalid request method"}, status=400)
+
+def get_parked_vehicles(request):
+    vehicles = VehicleLocation.objects.all()
+    data = [
+        {
+            "number_plate": vehicle.number_plate,
+            "owner": vehicle.owner,
+            "parking_spot": vehicle.parking_spot,
+            "time_in": vehicle.time_in.strftime("%Y-%m-%d %H:%M:%S"),  # Format time
+        }
+        for vehicle in vehicles
+    ]
+    return JsonResponse({"vehicles": data})
+
+
+def payment_history(request):
+    payments = Payment.objects.all().order_by('-payment_date')[:10]  # Get the latest 10 payments
+
+    data = []
+    for payment in payments:
+        # Handle missing customer and missing vehicle safely
+        vehicle_license_plate = "Unknown"
+        if payment.customer_id:  # Use customer_id instead of directly accessing customer
+            if hasattr(payment.customer, 'vehicle') and payment.customer.vehicle:
+                vehicle_license_plate = payment.customer.vehicle.license_plate
+
+        data.append({
+            "transaction_id": payment.checkout_request_id,
+            "vehicle_license_plate": vehicle_license_plate,
+            "amount": float(payment.amount) if payment.amount else 0.00,
+            "payment_status": payment.status,
+            "timestamp": payment.payment_date.strftime("%Y-%m-%d %H:%M:%S") if payment.payment_date else "N/A",
+        })
+
+    return JsonResponse(data, safe=False)

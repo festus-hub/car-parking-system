@@ -47,6 +47,8 @@ urlpatterns = [
     path('search/', views.global_search, name='global_search'),
     path('mpesa/pay/', views.initiate_payment, name='mpesa_pay'),
     path("mpesa/callback/", views.mpesa_callback, name="mpesa_callback"),
+    path('get-parked-vehicles/', views.get_parked_vehicles, name='get_parked_vehicles'),
+    path('payment-history/', views.payment_history, name='payment_history'),
 
 
 

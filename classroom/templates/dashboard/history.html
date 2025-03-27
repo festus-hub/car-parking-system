@@ -1,0 +1,107 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Payment History</h2>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Transaction ID</th>
+                <th>Vehicle</th>
+                <th>Amount (Ksh)</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+            <tr>
+                <td>{{ payment.transaction_id|default:"N/A" }}</td>
+                <td>{{ payment.vehicle.license_plate }}</td>
+                <td>{{ payment.amount }}</td>
+                <td>
+                    {% if payment.payment_status == "completed" %}
+                        <span class="badge bg-success">Completed</span>
+                    {% elif payment.payment_status == "pending" %}
+                        <span class="badge bg-warning">Pending</span>
+                    {% else %}
+                        <span class="badge bg-danger">Failed</span>
+                    {% endif %}
+                </td>
+                <td>{{ payment.timestamp|date:"d M Y, H:i A" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No payment history found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+<script>
+    function loadPayments() {
+        fetch('/payment-history/')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Failed to fetch payment data");
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Payment Data Received:", data); // Debugging output
+
+            let tableBody = document.getElementById("paymentTableBody");
+            tableBody.innerHTML = "";
+
+            if (data.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='5' class='text-center'>No payment records found.</td></tr>";
+                return;
+            }
+
+            data.forEach(payment => {
+                let row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${payment.transaction_id || "N/A"}</td>
+                    <td>${payment.vehicle_license_plate || "Unknown"}</td>
+                    <td>KES ${parseFloat(payment.amount).toFixed(2)}</td>
+                    <td>
+                        <span class="badge bg-${getStatusBadge(payment.payment_status)}">
+                            ${capitalizeFirstLetter(payment.payment_status)}
+                        </span>
+                    </td>
+                    <td>${formatDate(payment.timestamp)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        })
+        .catch(error => console.error("Error fetching payments:", error));
+    }
+
+    function getStatusBadge(status) {
+        switch (status.toLowerCase()) {
+            case 'completed': return 'success';
+            case 'pending': return 'warning';
+            case 'failed': return 'danger';
+            default: return 'secondary';
+        }
+    }
+
+    function capitalizeFirstLetter(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function formatDate(timestamp) {
+        if (!timestamp || timestamp === "N/A") return "N/A";
+        let date = new Date(timestamp);
+        return date.toLocaleString();
+    }
+
+    setInterval(loadPayments, 5000); // Refresh every 5 seconds
+    window.onload = loadPayments;
+</script>
+
+
+</body>
+</html>
