@@ -2,111 +2,118 @@
 {% load static %}
 
 {% block body %}
-<div id="content-wrapper">
-    <div class="container-fluid">
-        
-        <!-- Breadcrumbs-->
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="">Dashboard</a>
-            </li>
-            <li class="breadcrumb-item active">Overview</li>
-        </ol>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb bg-white shadow-sm rounded px-3 py-2">
+                <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Overview</li>
+            </ol>
+        </nav>
+    </div>
 
-        <!-- Icon Cards-->
-        <div class="row">
-            <!-- Total Amount Card -->
-            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                <div class="card text-white bg-success o-hidden h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="mr-5">Ksh {{ total_cost }} Total Amount</div>
-                        </div>
-                        <i class="fas fa-money-bill-alt fa-2x"></i>
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Total Amount -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card shadow border-0 bg-success text-white h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Ksh {{ total_cost }}</h5>
+                        <small>Total Amount</small>
                     </div>
-                    {% if customers and customer.id %}
-                    <a class="card-footer text-white clearfix small z-1" href="{% url 'amount_details' customer.id %}">
-                        <span class="float-left">Amount Details</span>
-                        <span class="float-right">
-                            <i class="fas fa-angle-right"></i>
-                        </span>
-                    </a>
-                    {% else %}
-                    <span class="text-center text-light py-2">No customer available</span>
-                    {% endif %}
+                    <i class="fas fa-money-bill-wave fa-2x"></i>
                 </div>
-            </div>
-
-            <!-- Total Vehicles Card -->
-            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                <div class="card text-white bg-warning o-hidden h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="mr-5">{{ total_vehicles }} Total Vehicles</div>
-                        </div>
-                        <i class="fas fa-car fa-2x"></i>
-                    </div>
-                    <a class="card-footer text-white clearfix small z-1" href="{% url 'vehicle_details' %}">
-                        <span class="float-left">More Info</span>
-                        <span class="float-right">
-                            <i class="fas fa-angle-right"></i>
-                        </span>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Total Users Card -->
-            <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-                <div class="card text-white bg-danger o-hidden h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="mr-5">{{ total_users }} Total Users</div>
-                        </div>
-                        <i class="fas fa-user fa-2x"></i>
-                    </div>
-                    <a class="card-footer text-white clearfix small z-1" href="{% url 'user_details'  %}">
-                        <span class="float-left">More Info</span>
-                        <span class="float-right">
-                            <i class="fas fa-angle-right"></i>
-                        </span>
-                    </a>
-                </div>
+                {% if customers and customer.id %}
+                <a href="{% url 'amount_details' customer.id %}" class="card-footer text-white text-decoration-none small d-flex justify-content-between align-items-center">
+                    <span>Amount Details</span>
+                    <i class="fas fa-angle-right"></i>
+                </a>
+                {% else %}
+                <div class="card-footer text-center text-light small">No customer available</div>
+                {% endif %}
             </div>
         </div>
 
-        <!-- Parking Duration Graph -->
-        <div class="card">
-            <div class="card-header text-primary">
-                <i class="fas fa-chart-bar text-secondary"></i> Average Parking Duration Per Month
+        <!-- Total Vehicles -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card shadow border-0 bg-warning text-white h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">{{ total_vehicles }}</h5>
+                        <small>Total Vehicles</small>
+                    </div>
+                    <i class="fas fa-car fa-2x"></i>
+                </div>
+                <a href="{% url 'vehicle_details' %}" class="card-footer text-white text-decoration-none small d-flex justify-content-between align-items-center">
+                    <span>More Info</span>
+                    <i class="fas fa-angle-right"></i>
+                </a>
             </div>
-            <div class="card-body">
-                <canvas id="parkingChart"></canvas>
+        </div>
+
+        <!-- Total Users -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card shadow border-0 bg-danger text-white h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">{{ total_users }}</h5>
+                        <small>Total Users</small>
+                    </div>
+                    <i class="fas fa-user fa-2x"></i>
+                </div>
+                <a href="{% url 'user_details' %}" class="card-footer text-white text-decoration-none small d-flex justify-content-between align-items-center">
+                    <span>More Info</span>
+                    <i class="fas fa-angle-right"></i>
+                </a>
             </div>
+        </div>
+    </div>
+
+    <!-- Parking Duration Chart -->
+    <div class="card shadow border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 text-primary"><i class="fas fa-chart-bar me-2 text-secondary"></i>Average Parking Duration Per Month</h6>
+        </div>
+        <div class="card-body">
+            <canvas id="parkingChart" height="100"></canvas>
         </div>
     </div>
 </div>
 
-<!-- Include Chart.js -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        var ctx = document.getElementById('parkingChart').getContext('2d');
-        var parkingChart = new Chart(ctx, {
+        const ctx = document.getElementById('parkingChart').getContext('2d');
+        new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: {{ months|safe }},  // Month names
+                labels: {{ months|safe }},
                 datasets: [{
                     label: 'Avg Parking Duration (Hours)',
-                    data: {{ parking_durations|safe }},  // Duration in hours
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    data: {{ parking_durations|safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
                     borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
-                    y: { beginAtZero: true }
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
                 }
             }
         });

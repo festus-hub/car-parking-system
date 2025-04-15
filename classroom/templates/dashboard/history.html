@@ -10,25 +10,21 @@
                 <th>Vehicle</th>
                 <th>Amount (Ksh)</th>
                 <th>Status</th>
-                <th>Date</th>
+                <th>Date & Time</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="paymentTableBody">
             {% for payment in payments %}
             <tr>
                 <td>{{ payment.transaction_id|default:"N/A" }}</td>
-                <td>{{ payment.vehicle.license_plate }}</td>
-                <td>{{ payment.amount }}</td>
+                <td>{{ payment.vehicle.license_plate|default:"Unknown" }}</td>
+                <td>KES {{ payment.amount|floatformat:2 }}</td>
                 <td>
-                    {% if payment.payment_status == "completed" %}
-                        <span class="badge bg-success">Completed</span>
-                    {% elif payment.payment_status == "pending" %}
-                        <span class="badge bg-warning">Pending</span>
-                    {% else %}
-                        <span class="badge bg-danger">Failed</span>
-                    {% endif %}
+                    <span class="badge bg-{% if payment.payment_status == 'completed' %}success{% elif payment.payment_status == 'pending' %}warning{% else %}danger{% endif %}">
+                        {{ payment.payment_status|title }}
+                    </span>
                 </td>
-                <td>{{ payment.timestamp|date:"d M Y, H:i A" }}</td>
+                <td>{{ payment.timestamp|date:"d M Y, h:i A" }}</td>
             </tr>
             {% empty %}
             <tr>
@@ -43,44 +39,34 @@
 <script>
     function loadPayments() {
         fetch('/payment-history/')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Failed to fetch payment data");
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log("Payment Data Received:", data); // Debugging output
-
             let tableBody = document.getElementById("paymentTableBody");
             tableBody.innerHTML = "";
 
             if (data.length === 0) {
-                tableBody.innerHTML = "<tr><td colspan='5' class='text-center'>No payment records found.</td></tr>";
+                tableBody.innerHTML = "<tr><td colspan='5' class='text-center'>No payment history found.</td></tr>";
                 return;
             }
 
             data.forEach(payment => {
-                let row = document.createElement("tr");
-                row.innerHTML = `
+                let row = `<tr>
                     <td>${payment.transaction_id || "N/A"}</td>
                     <td>${payment.vehicle_license_plate || "Unknown"}</td>
                     <td>KES ${parseFloat(payment.amount).toFixed(2)}</td>
-                    <td>
-                        <span class="badge bg-${getStatusBadge(payment.payment_status)}">
-                            ${capitalizeFirstLetter(payment.payment_status)}
-                        </span>
-                    </td>
+                    <td><span class="badge bg-${getStatusBadge(payment.payment_status)}">
+                        ${getStatusIcon(payment.payment_status)} ${capitalizeFirstLetter(payment.payment_status)}
+                    </span></td>
                     <td>${formatDate(payment.timestamp)}</td>
-                `;
-                tableBody.appendChild(row);
+                </tr>`;
+                tableBody.innerHTML += row;
             });
         })
         .catch(error => console.error("Error fetching payments:", error));
     }
 
     function getStatusBadge(status) {
-        switch (status.toLowerCase()) {
+        switch (status?.toLowerCase()) {
             case 'completed': return 'success';
             case 'pending': return 'warning';
             case 'failed': return 'danger';
@@ -88,8 +74,17 @@
         }
     }
 
+    function getStatusIcon(status) {
+        switch (status?.toLowerCase()) {
+            case 'completed': return '✅';
+            case 'pending': return '⏳';
+            case 'failed': return '❌';
+            default: return '';
+        }
+    }
+
     function capitalizeFirstLetter(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1);
+        return str ? str.charAt(0).toUpperCase() + str.slice(1) : "N/A";
     }
 
     function formatDate(timestamp) {
@@ -101,7 +96,3 @@
     setInterval(loadPayments, 5000); // Refresh every 5 seconds
     window.onload = loadPayments;
 </script>
-
-
-</body>
-</html>

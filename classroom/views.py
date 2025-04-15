@@ -893,8 +893,12 @@ def mpesa_callback(request):
         return JsonResponse({"error": "Invalid request method"}, status=400)
 
     try:
-        # Load JSON response from M-Pesa
-        mpesa_response = json.loads(request.body)
+        # Decode raw request body
+        raw_body = request.body.decode("utf-8")
+        logger.info(f"📩 Raw Callback Data: {raw_body}")
+
+        # Parse JSON
+        mpesa_response = json.loads(raw_body)
         logger.info(f"✅ M-Pesa Callback Received: {json.dumps(mpesa_response, indent=4)}")
 
         # Extract transaction details
@@ -903,7 +907,8 @@ def mpesa_callback(request):
         result_desc = stk_callback.get("ResultDesc")
         checkout_request_id = stk_callback.get("CheckoutRequestID")
 
-        # Check if transaction was successful
+        logger.info(f"Result Code: {result_code}, Result Description: {result_desc}")
+
         if result_code == 0:
             metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
             logger.info(f"✅ Callback Metadata: {metadata}")
@@ -934,12 +939,14 @@ def mpesa_callback(request):
             return JsonResponse({"error": "Payment failed", "message": result_desc}, status=400)
 
     except json.JSONDecodeError:
-        logger.error("❌ Invalid JSON received in callback")
+        logger.error(f"❌ Invalid JSON received in callback: {raw_body}")
         return JsonResponse({"error": "Invalid JSON format"}, status=400)
 
     except Exception as e:
         logger.exception(f"❌ Error processing M-Pesa callback: {e}")
         return JsonResponse({"error": "Internal server error", "details": str(e)}, status=500)
+
+
 
 
 def get_parked_vehicles(request):
@@ -957,21 +964,16 @@ def get_parked_vehicles(request):
 
 
 def payment_history(request):
-    payments = Payment.objects.all().order_by('-payment_date')[:10]  # Get the latest 10 payments
+    # Get latest 10 payments
+    payments = Payment.objects.order_by('-payment_date')[:10]
 
     data = []
     for payment in payments:
-        # Handle missing customer and missing vehicle safely
-        vehicle_license_plate = "Unknown"
-        if payment.customer_id:  # Use customer_id instead of directly accessing customer
-            if hasattr(payment.customer, 'vehicle') and payment.customer.vehicle:
-                vehicle_license_plate = payment.customer.vehicle.license_plate
-
         data.append({
-            "transaction_id": payment.checkout_request_id,
-            "vehicle_license_plate": vehicle_license_plate,
+            "transaction_id": payment.checkout_request_id or "N/A",
+            "vehicle_license_plate": "Unknown",  # Since customer is None, default to Unknown
             "amount": float(payment.amount) if payment.amount else 0.00,
-            "payment_status": payment.status,
+            "payment_status": payment.status or "Unknown",
             "timestamp": payment.payment_date.strftime("%Y-%m-%d %H:%M:%S") if payment.payment_date else "N/A",
         })
 
