@@ -101,6 +101,26 @@
         </div>
 
         <div class="col-lg-4">
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0 text-primary"><i class="fas fa-stopwatch me-2 text-secondary"></i>Parking Duration Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="text-muted small">Average Duration</div>
+                            <div class="fs-4 fw-bold text-primary">{{ average_parking_hours }} hrs</div>
+                        </div>
+                        <i class="fas fa-clock fa-2x text-secondary"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Peak Month</div>
+                        <div class="fw-semibold">{{ peak_duration_month }}</div>
+                        <div class="small text-muted">{{ peak_duration }} hrs average parking time</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card shadow border-0 h-100">
                 <div class="card-header bg-white">
                     <h6 class="mb-0 text-primary"><i class="fas fa-chart-pie me-2 text-secondary"></i>Payment Status</h6>
@@ -125,6 +145,15 @@
         </div>
 
         <div class="col-lg-4">
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0 text-primary"><i class="fas fa-wave-square me-2 text-secondary"></i>Parking Duration Trend</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="parkingTrendChart" height="220"></canvas>
+                </div>
+            </div>
+
             <div class="card shadow border-0 h-100">
                 <div class="card-header bg-white">
                     <h6 class="mb-0 text-primary"><i class="fas fa-credit-card me-2 text-secondary"></i>Payment Methods</h6>
@@ -175,6 +204,37 @@
                     legend: {
                         display: true,
                         position: 'top'
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('parkingTrendChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: months,
+                datasets: [{
+                    label: 'Parking Duration Trend (Hours)',
+                    data: parkingDurations,
+                    fill: true,
+                    tension: 0.35,
+                    backgroundColor: 'rgba(13, 110, 253, 0.15)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
                     }
                 }
             }

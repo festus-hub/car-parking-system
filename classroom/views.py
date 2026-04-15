@@ -119,6 +119,11 @@ def dashboard(request):
 
     months = [month_name[m] for m in all_months.keys()]
     parking_durations = list(all_months.values())
+    average_parking_hours = round(
+        sum(parking_durations) / len(parking_durations), 2
+    ) if parking_durations else 0
+    peak_duration = max(parking_durations) if parking_durations else 0
+    peak_duration_month = months[parking_durations.index(peak_duration)] if parking_durations else "N/A"
 
     revenue_by_month = {month: 0 for month in range(1, 13)}
     revenue_data = (
@@ -157,6 +162,9 @@ def dashboard(request):
         "first_customer": first_customer,
         "months": json.dumps(months),
         "parking_durations": json.dumps(parking_durations),
+        "average_parking_hours": average_parking_hours,
+        "peak_duration": peak_duration,
+        "peak_duration_month": peak_duration_month,
         "monthly_revenue": json.dumps(monthly_revenue),
         "payment_status_labels": json.dumps(["Paid", "Pending"]),
         "payment_status_values": json.dumps([total_paid, total_pending]),
