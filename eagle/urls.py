@@ -1,7 +1,6 @@
 from django.urls import include, path
 from classroom import views
 from django.contrib import admin
-from classroom import views
 from django.contrib.auth import views as auth_views
 
 
@@ -28,7 +27,7 @@ urlpatterns = [
     path('update_vehicle/<int:pk>', views.VehicleUpdateView.as_view(), name='update_vehicle'),
     path('update_car/<int:pk>', views.CarUpdateView.as_view(), name='update_car'),
     path('delete_vehicle/<int:pk>', views.VehicleDeleteView.as_view(), name='delete_vehicle'),
-    path('delete_car/<int:pk>', views.CarDeleteView.as_view(), name='delete_car'),
+    path('delete_car/<int:pk>/', views.CarDeleteView.as_view(), name='delete_car'),
     path('inoice/<int:pk>', views.GeneratePdf.as_view(), name='invoice'),
     path('user_update/<int:pk>', views.UserUpdateView.as_view(), name='user_update'),
     path('delete_user/<int:pk>', views.DeleteUser.as_view(), name='delete_user'),

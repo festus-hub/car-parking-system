@@ -44,19 +44,19 @@
                                             <td>{{ customer.payment_method }}</td>
                                             <td>{{ customer.payment_date|date:"Y-m-d H:i" }}</td>
                                             <td>
-                                                <button type="button" class="bs-modal read-book btn btn-sm btn-primary" data-form-url="{% url 'view_car' customer.pk %}">
-                                                    <span class="fa fa-eye"> View</span>
-                                                </button>
+                                                <a class="btn btn-sm btn-primary" href="{% url 'view_car' customer.pk %}">
+                                                    <span class="fa fa-eye"></span> View
+                                                </a>
                                                 <a class="btn btn-sm btn-success" href="{% url 'invoice' customer.pk %}">
                                                     <span class="fas fa-print"></span> Invoice
                                                 </a>
-                                                <button type="button" class="update-book btn btn-sm btn-warning" data-form-url="{% url 'update_car' customer.pk %}">
-                                                    <span class="fa fa-pencil"> Edit</span>
-                                                </button>
-                                                <button type="button" class="bs-modal delete-book btn btn-sm btn-danger" data-form-url="{% url 'delete_car' customer.pk %}">
-                                                    <span class="fa fa-trash"> Delete</span>
-                                                </button>
-                                            </td>
+                                                <a class="btn btn-sm btn-warning" href="{% url 'update_car' customer.pk %}">
+                                                    <span class="fa fa-pencil"></span> Edit
+                                                </a>
+                                                <a class="btn btn-sm btn-danger" href="{% url 'delete_car' customer.pk %}">
+                                                    <span class="fa fa-trash"></span> Delete
+                                                </a>
+                                            </td>                                            
                                         </tr>
                                     {% endfor %}
                                 {% endif %}

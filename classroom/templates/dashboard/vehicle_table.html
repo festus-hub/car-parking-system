@@ -1,204 +1,217 @@
 {% block body %}
-    <div id="content-wrapper">
-        <div class="container-fluid">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item">
-                    <a href="">List Of Vehicles</a>
-                </li>
-            </ol>
+<div id="content-wrapper">
+    <div class="container-fluid">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="">List Of Vehicles</a>
+            </li>
+        </ol>
 
-            <div class="card mb-3">
-                <div class="card-header">
-                    <i class="fas fa-table"></i> Information
-                </div>
-                <div class="card-body">
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        </div>
-                    {% endfor %}
-
-                    <div class="table-responsive">
-                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                            <thead class="thead-dark">
-                                <tr>
-                                    <th>No</th>
-                                    <th>First Name</th>
-                                    <th>Entry Date</th>
-                                    <th>Exit Date</th>
-                                    <th>Days Spent</th>
-                                    <th>Total Cost</th>
-                                    <th>Payment Method</th>
-                                    <th>Payment Date</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if customers %}
-                                    {% for customer in customers %}
-                                        <tr>
-                                            <td>{{ forloop.counter }}</td>
-                                            <td>{{ customer.first_name }}</td>
-                                            <td>{{ customer.reg_date|date:"F j, Y" }}</td>
-                                            <td>{{ customer.exit_date|date:"F j, Y" }}</td>
-                                            <td>{{ customer.days_spent }}</td>
-                                            <td>Ksh {{ customer.total_cost }}</td>
-                                            <td>
-                                                <form class="payment-form" data-id="{{ customer.pk }}">
-                                                    {% csrf_token %}
-                                                    <select name="payment_method" class="form-control payment-method">
-                                                        <option value="M-Pesa" {% if customer.payment_method == 'M-Pesa' %}selected{% endif %}>M-Pesa</option>
-                                                        <option value="Cash" {% if customer.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
-                                                        <option value="Card" {% if customer.payment_method == 'Card' %}selected{% endif %}>Card</option>
-                                                        <option value="Other" {% if customer.payment_method == 'Other' %}selected{% endif %}>Other</option>
-                                                    </select>
-                                                </form>
-                                            </td>
-                                            <td>{{ customer.payment_date|date:"F j, Y" }}</td>
-
-                                            <td>
-                                                <button type="button" class="btn btn-sm btn-primary view-vehicle" data-url="{% url 'view_vehicle' customer.pk %}">
-                                                    <span class="fa fa-eye"></span> View
-                                                </button>
-
-                                                <button class="btn btn-sm btn-success pay-button" data-id="{{ customer.pk }}" data-amount="{{ customer.total_cost }}">
-                                                    <span class="fas fa-comments-dollar"></span> Pay
-                                                </button>
-
-                                                <button type="button" class="btn btn-sm btn-warning update-vehicle" data-url="{% url 'update_vehicle' customer.pk %}">
-                                                    <span class="fa fa-pencil"></span> Edit
-                                                </button>
-
-                                                <button type="button" class="btn btn-sm btn-danger delete-vehicle" data-url="{% url 'delete_vehicle' customer.pk %}">
-                                                    <span class="fa fa-trash"></span> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
-                                    <tr>
-                                        <td colspan="9" class="text-center">No customers found.</td>
-                                    </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-
-                        {% if is_paginated %}
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
-                                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
-                                {% endif %}
-
-                                {% for i in paginator.page_range %}
-                                    {% if page_obj.number == i %}
-                                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                                    {% else %}
-                                        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
-                                    {% endif %}
-                                {% endfor %}
-
-                                {% if page_obj.has_next %}
-                                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
-                                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a></li>
-                                {% endif %}
-                            </ul>
-                        {% endif %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="fas fa-table"></i> Information
+            </div>
+            <div class="card-body">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
                     </div>
+                {% endfor %}
+
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>No</th>
+                                <th>First Name</th>
+                                <th>Entry Date</th>
+                                <th>Exit Date</th>
+                                <th>Days Spent</th>
+                                <th>Total Cost</th>
+                                <th>Payment Method</th>
+                                <th>Payment Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if customers %}
+                                {% for customer in customers %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ customer.first_name }}</td>
+                                        <td>{{ customer.reg_date|date:"F j, Y" }}</td>
+                                        <td>{{ customer.exit_date|date:"F j, Y" }}</td>
+                                        <td>{{ customer.days_spent }}</td>
+                                        <td>Ksh {{ customer.total_cost }}</td>
+                                        <td>
+                                            <form class="payment-form" data-id="{{ customer.pk }}">
+                                                {% csrf_token %}
+                                                <select name="payment_method" class="form-control payment-method">
+                                                    <option value="M-Pesa" {% if customer.payment_method == 'M-Pesa' %}selected{% endif %}>M-Pesa</option>
+                                                    <option value="Cash" {% if customer.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
+                                                    <option value="Card" {% if customer.payment_method == 'Card' %}selected{% endif %}>Card</option>
+                                                    <option value="Other" {% if customer.payment_method == 'Other' %}selected{% endif %}>Other</option>
+                                                </select>
+                                            </form>
+                                        </td>
+                                        <td>{{ customer.payment_date|date:"F j, Y" }}</td>
+                                        <td>
+                                            <!-- View Vehicle -->
+                                            <button type="button" class="btn btn-sm btn-primary view-vehicle" 
+                                                    data-url="{% url 'view_car' customer.pk %}">
+                                                <span class="fa fa-eye"></span> View
+                                            </button>
+                                        
+                                            <!-- Pay Button -->
+                                            <button type="button" class="btn btn-sm btn-success pay-button" 
+                                                    data-id="{{ customer.pk }}" data-amount="{{ customer.total_cost }}">
+                                                <span class="fas fa-comments-dollar"></span> Pay
+                                            </button>
+                                        
+                                            <!-- Edit Vehicle -->
+                                            <button type="button" class="btn btn-sm btn-warning update-vehicle" 
+                                                    data-url="{% url 'update_vehicle' customer.pk %}">
+                                                <span class="fa fa-pencil"></span> Edit
+                                            </button>
+                                        
+                                            <!-- Delete Vehicle -->
+                                            <button type="button" class="btn btn-sm btn-danger delete-vehicle" 
+                                                    data-url="{% url 'delete_car' customer.pk %}">
+                                                <span class="fa fa-trash"></span> Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center">No customers found.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+
+                    {% if is_paginated %}
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?page=1">First</a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+                            {% endif %}
+
+                            {% for i in paginator.page_range %}
+                                {% if page_obj.number == i %}
+                                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                                {% else %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a></li>
+                            {% endif %}
+                        </ul>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Your existing vanilla JS logic for M-Pesa
-            document.querySelectorAll(".pay-button").forEach(button => {
-                button.addEventListener("click", function () {
-                    let customerId = this.getAttribute("data-id");
-                    let amount = this.getAttribute("data-amount");  // fixed typo here from "data-amoun"
-                    let phoneNumber = prompt("Enter your M-Pesa number (format: 2547XXXXXXXX):");
-    
-                    if (!phoneNumber || !phoneNumber.startsWith("2547") || phoneNumber.length !== 12) {
-                        alert("Invalid phone number format! Use 2547XXXXXXXX.");
-                        return;
-                    }
-    
-                    fetch(`/mpesa/pay/`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRFToken": getCookie("csrftoken")
-                        },
-                        body: JSON.stringify({
-                            customer_id: customerId,
-                            phone_number: phoneNumber,
-                            amount: amount
-                        }),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message || "Payment request sent!");
-                        if (data.status === "success") {
-                            let interval = setInterval(() => checkPaymentStatus(customerId, interval), 5000);
-                        }
-                    })
-                    .catch(error => console.error("Error:", error));
-                });
-            });
-    
-            // Additional jQuery logic
-            $('.view-vehicle').on('click', function () {
-                const url = $(this).data('url');
-                window.location.href = url;
-            });
-    
-            $('.update-vehicle').on('click', function () {
-                const url = $(this).data('url');
-                window.location.href = url;
-            });
-    
-            $('.delete-vehicle').on('click', function () {
-                const url = $(this).data('url');
-                if (confirm("Are you sure you want to delete this vehicle?")) {
-                    window.location.href = url;
-                }
-            });
-    
-            // You can also combine jQuery for pay-button if you prefer
-            // $('.pay-button').on('click', function () {
-            //     const id = $(this).data('id');
-            //     const amount = $(this).data('amount');
-            //     alert(`Paying ${amount} for ID ${id}`);
-            // });
-        });
-    
-        function checkPaymentStatus(customerId, interval) {
-            fetch(`/check-payment-status/${customerId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === "paid") {
-                        clearInterval(interval);
-                        window.location.href = "/vehicles/";
-                    }
-                });
-        }
-    
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                document.cookie.split(';').forEach(cookie => {
-                    let trimmedCookie = cookie.trim();
-                    if (trimmedCookie.startsWith(name + '=')) {
-                        cookieValue = decodeURIComponent(trimmedCookie.substring(name.length + 1));
-                    }
-                });
+<!-- Global Bootstrap Modal -->
+<div class="modal fade" id="vehicleModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Pay button logic
+    document.querySelectorAll(".pay-button").forEach(button => {
+        button.addEventListener("click", function () {
+            let customerId = this.getAttribute("data-id");
+            let amount = this.getAttribute("data-amount");
+            let phoneNumber = prompt("Enter your M-Pesa number (format: 2547XXXXXXXX):");
+
+            if (!phoneNumber || !phoneNumber.startsWith("2547") || phoneNumber.length !== 12) {
+                alert("Invalid phone number format! Use 2547XXXXXXXX.");
+                return;
             }
-            return cookieValue;
-        }
-    </script>
-    
-        
 
+            fetch(`/mpesa/pay/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({
+                    customer_id: customerId,
+                    phone_number: phoneNumber,
+                    amount: amount
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || "Payment request sent!");
+                if (data.status === "success") {
+                    let interval = setInterval(() => checkPaymentStatus(customerId, interval), 5000);
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        });
+    });
+
+    // View Vehicle (AJAX into modal)
+    $(document).on("click", ".view-vehicle", function () {
+        const url = $(this).data("url");
+        $.get(url, function(data) {
+            $("#vehicleModal .modal-content").html(data);
+            $("#vehicleModal").modal("show");
+        });
+    });
+
+    // Edit Vehicle (AJAX into modal)
+    $(document).on("click", ".update-vehicle", function () {
+        const url = $(this).data("url");
+        $.get(url, function(data) {
+            $("#vehicleModal .modal-content").html(data);
+            $("#vehicleModal").modal("show");
+        });
+    });
+
+    // Delete Vehicle (AJAX into modal)
+    $(document).on("click", ".delete-vehicle", function () {
+        const url = $(this).data("url");
+        $.get(url, function(data) {
+            $("#vehicleModal .modal-content").html(data);
+            $("#vehicleModal").modal("show");
+        });
+    });
+});
+
+function checkPaymentStatus(customerId, interval) {
+    fetch(`/check-payment-status/${customerId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "paid") {
+                clearInterval(interval);
+                window.location.reload();
+            }
+        });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        document.cookie.split(';').forEach(cookie => {
+            let trimmedCookie = cookie.trim();
+            if (trimmedCookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(trimmedCookie.substring(name.length + 1));
+            }
+        });
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}
