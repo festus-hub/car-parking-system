@@ -3,153 +3,157 @@
     <head>
         <title>Invoice</title>
         <style type="text/css">
+            body {
+                font-family: Helvetica, Arial, sans-serif;
+                color: #1f2937;
+                font-size: 13px;
+                font-weight: 400;
+            }
+            .invoice-shell {
+                border: 1px solid #d9e2ec;
+                border-radius: 8px;
+                padding: 28px;
+                background: #ffffff;
+            }
+            .topbar {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            .topbar td {
+                border: none;
+                padding: 0;
+                vertical-align: top;
+            }
+            .brand-title {
+                font-size: 30px;
+                font-weight: bold;
+                color: #0f766e;
+                margin-bottom: 6px;
+            }
+            .invoice-title {
+                font-size: 26px;
+                font-weight: bold;
+                color: #0f172a;
+                text-align: right;
+            }
+            .muted {
+                color: #64748b;
+            }
+            .summary-table td {
+                border: none;
+                padding: 4px 0;
+            }
             table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-top: 20px;
+                margin-top: 16px;
             }
             th, td {
-                border: 1px solid #ddd;
-                padding: 10px;
+                border: 1px solid #dbe2ea;
+                padding: 10px 12px;
                 text-align: left;
             }
             th {
-                background-color: #f2f2f2;
+                background-color: #0f172a;
+                color: white;
                 font-weight: bold;
-            }
-            .total {
-                font-size: 18px;
-                font-weight: bold;
-            }
-            .amount {
-                text-align: right;
-            }
-            body {
-                font-weight: 200;
-                font-size: 14px;
-            }
-            .header {
-                font-size: 20px;
-                font-weight: 100;
-                text-align: center;
-                color: #007cae;
-            }
-            .title {
-                font-size: 22px;
-                font-weight: 100;
-                padding: 10px 20px 0px 20px;
-            }
-            .title span {
-                color: #007cae;
             }
             .details {
-                padding: 10px 20px 0px 20px;
+                padding-top: 6px;
                 text-align: left !important;
             }
-            .hrItem {
-                border: none;
-                height: 1px;
-                color: #333;
-                background-color: #fff;
+            .section-title {
+                font-size: 16px;
+                font-weight: bold;
+                color: #0f766e;
+                margin: 18px 0 8px 0;
             }
-            #myline {
-                opacity: 0.6;
-                width: 800px;
-                height: 10px;
-                margin-right: auto;
-                margin-left: auto;
-                background-color: #666;
+            .highlight {
+                background: #f8fafc;
             }
-            #logo {
-                float: left;
-                margin-top: 8px;
+            .footer-note {
+                margin-top: 28px;
+                text-align: center;
+                color: #475569;
             }
-            #logo img {
-                height: 70px;
+            .signature-block {
+                margin-top: 30px;
             }
-            #company {
-                float: right;
-                text-align: right;
-            }
-            #myline3 {
-                border-top: 3px double #8c8b8b;
-                width: 800px;
+            .signature-line {
+                margin: 18px 0 0 0;
             }
         </style>
     </head>
     <body>
-        <div id="company" style="float: right;">
-            <h1 class="name" style="text-align: right; color: #007cae">Payment Invoice</h1>
-            <div style="text-align: right;">Car Parking System </div>
-            <div style="text-align: right;">{{ data.address }}</div>
-            <div style="text-align: right;">{{ data.location }}</div>
-            <div style="text-align: right;"><a href="mailto:{{ company.email }}">{{ data.email }}</a></div>
-            <br>
-        </div>
-        <hr id="myline3">
-        <hr id="myline2">
-
-        <div class="wrapper">
-            <div class="header">
-                {% if infos %}
-                    {% for info in infos %}
-                    {% endfor %}
-                {% endif %}
-            </div>
+        <div class="invoice-shell">
+            <table class="topbar">
+                <tr>
+                    <td>
+                        <div class="brand-title">{{ data.company_name }}</div>
+                        <div class="muted">{{ data.address }}</div>
+                        <div class="muted">{{ data.location }}</div>
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="invoice-title">PAYMENT INVOICE</div>
+                        <div class="muted">Reference: {{ data.reference }}</div>
+                        <div class="muted">Generated: {{ data.today }}</div>
+                    </td>
+                </tr>
+            </table>
 
             <div class="details">
                 {% if infos %}
                     {% for info in infos %}
+                    <div class="section-title">Customer Details</div>
                     <table>
-                        <thead>
-                            <tr>
-                                <th colspan="2" style="background-color: black; color: white; font-weight: bold; font-size: 25px;">Customer Details</th>
-                            </tr>
-                        </thead>
-                        <tr>
-                            <td class="unit">Full Names</td>
-                            <td class="unit">{{ info.first_name }} {{ info.last_name }}</td>
+                        <tr class="highlight">
+                            <td>Full Names</td>
+                            <td>{{ info.first_name }} {{ info.last_name }}</td>
                         </tr>
                         <tr>
-                            <td class="unit">Entry Date</td>
-                            <td class="unit">{{ info.reg_date|date:"F j, Y" }}</td>
+                            <td>Entry Date</td>
+                            <td>{{ info.reg_date|date:"F j, Y" }}</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>Exit Date</td>
+                            <td>{% if info.exit_date %}{{ info.exit_date|date:"F j, Y" }}{% else %}Still Parked{% endif %}</td>
                         </tr>
                         <tr>
-                            <td class="unit">Exit Date</td>
-                            <td class="unit">{{ info.exit_date|date:"F j, Y" }}</td>
+                            <td>Total Days</td>
+                            <td>{{ info.days_spent|default:"0" }}</td>
+                        </tr>
+                        <tr class="highlight">
+                            <td>Plate Number</td>
+                            <td>{{ info.card_number }}</td>
                         </tr>
                         <tr>
-                            <td class="unit">Total Days</td>
-                            <td class="unit">{{ info.days_spent }}</td>
-                        </tr>
-                        <tr>
-                            <td class="unit">Card Number</td>
-                            <td class="unit">{{ info.card_number }}</td>
-                        </tr>
-                        <tr>
-                            <td class="unit">Total Cost</td>
-                            <td class="unit">Ksh {{ info.total_cost }}</td>
+                            <td>Total Cost</td>
+                            <td><strong>Ksh {{ info.total_cost }}</strong></td>
                         </tr>
                     </table>
+
+                    <div class="section-title">Payment Summary</div>
                     <table>
-                       <tr>
-                            <td class="unit">Payment Method</td>
-                            <td class="unit">{% if info.payment_method %}{{ info.payment_method }}{% else %}Not Provided{% endif %}</td>
+                        <tr class="highlight">
+                            <td>Payment Method</td>
+                            <td>{% if info.payment_method %}{{ info.payment_method }}{% else %}Not Provided{% endif %}</td>
                         </tr>
                         <tr>
-                            <td class="unit">Payment Date</td>
-                            <td class="unit">{% if info.payment_date %}{{ info.payment_date|date:"F j, Y, g:i a" }}{% else %}Not Provided{% endif %}</td>
+                            <td>Payment Date</td>
+                            <td>{% if info.payment_date %}{{ info.payment_date|date:"F j, Y, g:i a" }}{% else %}Not Provided{% endif %}</td>
                         </tr>
                     </table>
                     {% endfor %}
                 {% endif %}
-                <br><br>
-                <p>Provided by : _______________________________________</p>
-                <p>Signature   : _______________________________________</p>
+
+                <div class="signature-block">
+                    <p class="signature-line">Provided by: _______________________________________</p>
+                    <p class="signature-line">Signature: _______________________________________</p>
+                </div>
             </div>
-            <div class="invoice-footer">
-                
-                <p>Thank you for choosing our service!</p>
+
+            <div class="footer-note">
+                <p>Thank you for choosing {{ data.company_name }}.</p>
             </div>
         </div>
     </body>

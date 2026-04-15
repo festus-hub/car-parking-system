@@ -57,7 +57,7 @@ import operator
 import itertools
 from calendar import month_name
 from django.db.models.functions import ExtractMonth
-from django.db.models import Sum, Avg, F, ExpressionWrapper, fields
+from django.db.models import Sum, Avg, F, ExpressionWrapper, fields, Count
 from django.views.decorators.csrf import csrf_exempt
 from .mpesa import stk_push_request
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -88,13 +88,16 @@ def home(request):
 
 def dashboard(request):
     customers = Customer.objects.all()
+    first_customer = customers.first()
 
     total_vehicles = customers.count()
     total_users = customers.values("user").distinct().count()
     total_cost = customers.aggregate(total=Sum("total_cost"))["total"] or 0
+    total_paid = customers.filter(is_payed=True).count()
+    total_pending = total_vehicles - total_paid
 
     # Extract parking duration per month
-    data = (
+    duration_data = (
         Customer.objects.annotate(month=ExtractMonth("created_at"))
         .values("month")
         .annotate(
@@ -105,26 +108,60 @@ def dashboard(request):
     )
     all_months = {month: 0 for month in range(1, 13)}
 
-    for entry in data:
-     month_number = entry["month"]
-     avg_duration= entry["avg_parking_duration"]
-    
-    if month_number:
-        all_months[month_number] = avg_duration.total_seconds() / 3600 if avg_duration else 0
-    else:
-        all_months.append(datetime.now().strftime("%B"))
+    for entry in duration_data:
+        month_number = entry["month"]
+        avg_duration = entry["avg_parking_duration"]
+
+        if month_number:
+            all_months[month_number] = round(
+                avg_duration.total_seconds() / 3600, 2
+            ) if avg_duration else 0
 
     months = [month_name[m] for m in all_months.keys()]
     parking_durations = list(all_months.values())
+
+    revenue_by_month = {month: 0 for month in range(1, 13)}
+    revenue_data = (
+        customers.filter(payment_date__isnull=False)
+        .annotate(month=ExtractMonth("payment_date"))
+        .values("month")
+        .annotate(total_amount=Sum("total_cost"))
+    )
+
+    for entry in revenue_data:
+        month_number = entry["month"]
+        if month_number:
+            revenue_by_month[month_number] = float(entry["total_amount"] or 0)
+
+    monthly_revenue = list(revenue_by_month.values())
+
+    payment_method_counts = (
+        customers.exclude(payment_method__isnull=True)
+        .exclude(payment_method__exact="")
+        .values("payment_method")
+        .annotate(total=Count("id"))
+        .order_by("payment_method")
+    )
+
+    payment_method_labels = [entry["payment_method"] for entry in payment_method_counts]
+    payment_method_totals = [entry["total"] for entry in payment_method_counts]
     
 
     context = {
         "total_cost": total_cost,
         "total_users": total_users,
         "total_vehicles": total_vehicles,
+        "total_paid": total_paid,
+        "total_pending": total_pending,
         "customers": customers,
-        "months": months,
-        "parking_durations": parking_durations,
+        "first_customer": first_customer,
+        "months": json.dumps(months),
+        "parking_durations": json.dumps(parking_durations),
+        "monthly_revenue": json.dumps(monthly_revenue),
+        "payment_status_labels": json.dumps(["Paid", "Pending"]),
+        "payment_status_values": json.dumps([total_paid, total_pending]),
+        "payment_method_labels": json.dumps(payment_method_labels),
+        "payment_method_totals": json.dumps(payment_method_totals),
     }
     return render(request, "dashboard/dashboard.html", context)
 
@@ -420,9 +457,10 @@ class GeneratePdf(ListView):
              'amount': 39.99,
             'customer_name': 'Festus ',
             'order_id': 1233434,
+            'company_name': 'Car Parking System',
             'location': ' KENYA, NAIROBI',
             'address': 'P.Box 1458 NAIROBI',
-            'email': 'info@techapp.com',
+            'reference': f'INV-{pk:04d}',
         },
         "infos": infos,
         }

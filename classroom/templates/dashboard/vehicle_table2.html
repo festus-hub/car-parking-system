@@ -44,18 +44,18 @@
                                             <td>{{ customer.payment_method }}</td>
                                             <td>{{ customer.payment_date|date:"Y-m-d H:i" }}</td>
                                             <td>
-                                                <a class="btn btn-sm btn-primary" href="{% url 'view_car' customer.pk %}">
+                                                <button type="button" class="btn btn-sm btn-primary view-car" data-url="{% url 'view_car' customer.pk %}">
                                                     <span class="fa fa-eye"></span> View
-                                                </a>
+                                                </button>
                                                 <a class="btn btn-sm btn-success" href="{% url 'invoice' customer.pk %}">
                                                     <span class="fas fa-print"></span> Invoice
                                                 </a>
-                                                <a class="btn btn-sm btn-warning" href="{% url 'update_car' customer.pk %}">
+                                                <button type="button" class="btn btn-sm btn-warning update-car" data-url="{% url 'update_car' customer.pk %}">
                                                     <span class="fa fa-pencil"></span> Edit
-                                                </a>
-                                                <a class="btn btn-sm btn-danger" href="{% url 'delete_car' customer.pk %}">
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger delete-car" data-url="{% url 'delete_car' customer.pk %}">
                                                     <span class="fa fa-trash"></span> Delete
-                                                </a>
+                                                </button>
                                             </td>                                            
                                         </tr>
                                     {% endfor %}
@@ -89,4 +89,86 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="paidVehicleModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content"></div>
+      </div>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modalElement = document.getElementById("paidVehicleModal");
+        const modalContent = modalElement.querySelector(".modal-content");
+        const paidVehicleModal = new bootstrap.Modal(modalElement);
+
+        document.addEventListener("click", function (event) {
+            const trigger = event.target.closest(".view-car, .update-car, .delete-car");
+            if (!trigger) {
+                return;
+            }
+
+            const url = trigger.getAttribute("data-url");
+            if (!url) {
+                return;
+            }
+
+            fetch(url, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+                .then(response => response.text())
+                .then(html => {
+                    modalContent.innerHTML = html;
+                    paidVehicleModal.show();
+                })
+                .catch(error => {
+                    console.error("Error loading modal:", error);
+                    alert("Unable to load this action right now.");
+                });
+        });
+
+        modalElement.addEventListener("submit", function (event) {
+            const form = event.target;
+            if (!form.closest(".modal-content")) {
+                return;
+            }
+
+            event.preventDefault();
+
+            fetch(form.action, {
+                method: form.method || "POST",
+                body: new FormData(form),
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return null;
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    if (html === null) {
+                        return;
+                    }
+
+                    if (html.includes("<form") && (html.includes("text-danger") || html.includes("invalid") || html.includes("form-control"))) {
+                        modalContent.innerHTML = html;
+                        return;
+                    }
+
+                    paidVehicleModal.hide();
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error("Error submitting form:", error);
+                    alert("Unable to save changes right now.");
+                });
+        });
+    });
+    </script>
 {% endblock %}

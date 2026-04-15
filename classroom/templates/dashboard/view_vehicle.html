@@ -1,50 +1,52 @@
 {% load widget_tweaks %}
 
 <div class="modal-header">
-  <h3 class="modal-title text-primary">Customer Details</h3>
-  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
+  <div>
+    <p class="text-uppercase text-muted small mb-1">Vehicle Record</p>
+    <h3 class="modal-title text-primary mb-0">Vehicle Details</h3>
+  </div>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 
 <div class="modal-body">
+  <div class="alert alert-primary border-0 shadow-sm mb-4" role="alert">
+    Current parking and billing information for this vehicle.
+  </div>
 
-  <div class="">
-    <strong> Username: </strong>
-    {{ customer.first_name }}
- </div>
- <div class="">
-    <strong> Cost Per Day: </strong>
-    {{ customer.cost_per_day }}
- </div>
- <div class="">
-    <strong> Entry Date: </strong>
-    {{ customer.reg_date }}
- </div>
- <div class="">
-    <strong> Exit Date: </strong>
-    {{ customer.exit_date }}
- </div>
- <div class="">
-    <strong> Total Cost: </strong>
-    {{ customer.total_cost }}
- </div>
- <div class="">
-    <strong> Days Spent: </strong>
-    {{ customer.days_spent }}
- </div>
- <div class="">
-    <strong> Payment Method: </strong>
-    {{ customer.payment_method }}
- </div>
- <div class="">
-    <strong> Payment Date: </strong>
-    {{ customer.payment_date|date:"Y-m-d H:i" }}
- </div>
- 
-
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="border rounded-3 p-3 h-100 bg-light shadow-sm">
+        <h6 class="text-uppercase text-muted mb-3">Customer</h6>
+        <p class="mb-2"><strong>Name:</strong> {{ customer.first_name|default:"Not provided" }} {{ customer.last_name|default:"" }}</p>
+        <p class="mb-2"><strong>Phone:</strong> {{ customer.phone_number|default:"Not provided" }}</p>
+        <p class="mb-2"><strong>Email:</strong> {{ customer.email|default:"Not provided" }}</p>
+        <p class="mb-0"><strong>Plate Number:</strong> {{ customer.card_number|default:"Not provided" }}</p>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="border rounded-3 p-3 h-100 bg-light shadow-sm">
+        <h6 class="text-uppercase text-muted mb-3">Parking Summary</h6>
+        <p class="mb-2"><strong>Entry Date:</strong> {{ customer.reg_date|date:"F j, Y, g:i a"|default:"Not recorded" }}</p>
+        <p class="mb-2"><strong>Exit Date:</strong> {% if customer.exit_date %}{{ customer.exit_date|date:"F j, Y, g:i a" }}{% else %}Still parked{% endif %}</p>
+        <p class="mb-2"><strong>Location:</strong> {{ customer.location|default:"Not assigned" }}</p>
+        <p class="mb-0"><strong>Status:</strong> {% if customer.is_payed %}<span class="badge bg-success">Paid</span>{% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}</p>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="border rounded-3 p-3 shadow-sm">
+        <h6 class="text-uppercase text-muted mb-3">Billing</h6>
+        <div class="row">
+          <div class="col-md-4 mb-2"><strong>Cost Per Day:</strong> {% if customer.cost_per_day %}Ksh {{ customer.cost_per_day }}{% else %}Not set{% endif %}</div>
+          <div class="col-md-4 mb-2"><strong>Total Cost:</strong> {% if customer.total_cost %}Ksh {{ customer.total_cost }}{% else %}Not calculated{% endif %}</div>
+          <div class="col-md-4 mb-2"><strong>Days Spent:</strong> {{ customer.days_spent|default:"0" }}</div>
+          <div class="col-md-4 mb-2"><strong>Payment Method:</strong> {{ customer.payment_method|default:"Not selected" }}</div>
+          <div class="col-md-8 mb-0"><strong>Payment Date:</strong> {% if customer.payment_date %}{{ customer.payment_date|date:"F j, Y, g:i a" }}{% else %}Not recorded{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="modal-footer">
-  <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
 </div>
