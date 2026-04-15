@@ -1,13 +1,11 @@
 {% load widget_tweaks %}
 
-<form method="post" action="">
+<form method="post" action="{% url 'update_vehicle' object.pk %}">
   {% csrf_token %}
 
   <div class="modal-header">
     <h3 class="modal-title text-primary">Update Customer Details</h3>
-    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
   </div>
 
   <div class="modal-body">
@@ -32,7 +30,8 @@
   </div>
 
   <div class="modal-footer">
-    <button type="button" class="submit-btn btn btn-primary">Update</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="submit-btn btn btn-primary">Update</button>
   </div>
 
 </form>
