@@ -2,9 +2,13 @@ import requests
 import json
 import datetime
 import base64
+import logging
 from classroom.utils import get_access_token
 
-def stk_push_request(phone_number=254716454678, amount=1):
+logger = logging.getLogger(__name__)
+
+
+def stk_push_request(phone_number=254716454678, amount=1, verbose=False):
     access_token = get_access_token()  # Get access token
 
     api_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
@@ -37,13 +41,9 @@ def stk_push_request(phone_number=254716454678, amount=1):
     # Send the POST request to the M-Pesa API
     response = requests.post(api_url, json=payload, headers=headers)
 
-    # Print the result
-    print(f"Response Status Code: {response.status_code}")
-    print(f"Response Content: {response.text}")
+    if verbose:
+        logger.info("Response Status Code: %s", response.status_code)
+        logger.info("Response Content: %s", response.text)
 
     # Return the response as a JSON object
     return response.json()  # Return API response
-
-# Call the function to test
-response_data = stk_push_request(phone_number="254716454678", amount=10)
-print(response_data)  # Print the returned result from the function

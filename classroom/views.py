@@ -877,7 +877,6 @@ def get_access_token():
 def initiate_payment(request):
      if request.method == "POST":
        try:
-            print("Raw request body:", request.body)  # Debugging print
             data = json.loads(request.body)  
 
             phone_number = data.get("phone_number")
