@@ -399,8 +399,6 @@ def Pay(request, pk):
 
 
 
-
-
 def render_to_pdf(template_src, context_dict={}):
     template = get_template(template_src)
     html  = template.render(context_dict)
@@ -964,17 +962,32 @@ def get_parked_vehicles(request):
 
 
 def payment_history(request):
-    # Get latest 10 payments
-    payments = Payment.objects.order_by('-payment_date')[:10]
+    payments = Payment.objects.select_related('customer').order_by('-payment_date')[:10]
 
-    data = []
+    if request.GET.get("format") == "json":
+        payment_rows = []
+        for payment in payments:
+            payment_rows.append({
+                "transaction_id": payment.checkout_request_id or "N/A",
+                "vehicle_license_plate": payment.customer.card_number if payment.customer else "Unknown",
+                "customer_name": str(payment.customer) if payment.customer else "Unknown",
+                "phone_number": payment.phone_number or "N/A",
+                "amount": float(payment.amount) if payment.amount else 0.00,
+                "payment_status": payment.status or "Unknown",
+                "timestamp": payment.payment_date.isoformat() if payment.payment_date else None,
+            })
+        return JsonResponse(payment_rows, safe=False)
+
+    payment_rows = []
     for payment in payments:
-        data.append({
+        payment_rows.append({
             "transaction_id": payment.checkout_request_id or "N/A",
-            "vehicle_license_plate": "Unknown",  # Since customer is None, default to Unknown
-            "amount": float(payment.amount) if payment.amount else 0.00,
+            "vehicle_license_plate": payment.customer.card_number if payment.customer else "Unknown",
+            "customer_name": str(payment.customer) if payment.customer else "Unknown",
+            "phone_number": payment.phone_number or "N/A",
+            "amount": payment.amount or 0,
             "payment_status": payment.status or "Unknown",
-            "timestamp": payment.payment_date.strftime("%Y-%m-%d %H:%M:%S") if payment.payment_date else "N/A",
+            "timestamp": payment.payment_date,
         })
 
-    return JsonResponse(data, safe=False)
+    return render(request, 'dashboard/history.html', {'payments': payment_rows})

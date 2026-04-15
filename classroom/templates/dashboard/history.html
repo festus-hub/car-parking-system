@@ -1,6 +1,6 @@
 {% extends 'dashboard/base.html' %}
 
-{% block content %}
+{% block body %}
 <div class="container mt-4">
     <h2 class="text-center">Payment History</h2>
     <table class="table table-striped mt-3">
@@ -17,10 +17,10 @@
             {% for payment in payments %}
             <tr>
                 <td>{{ payment.transaction_id|default:"N/A" }}</td>
-                <td>{{ payment.vehicle.license_plate|default:"Unknown" }}</td>
+                <td>{{ payment.vehicle_license_plate|default:"Unknown" }}</td>
                 <td>KES {{ payment.amount|floatformat:2 }}</td>
                 <td>
-                    <span class="badge bg-{% if payment.payment_status == 'completed' %}success{% elif payment.payment_status == 'pending' %}warning{% else %}danger{% endif %}">
+                    <span class="badge bg-{% if payment.payment_status|lower == 'completed' %}success{% elif payment.payment_status|lower == 'pending' %}warning{% else %}danger{% endif %}">
                         {{ payment.payment_status|title }}
                     </span>
                 </td>
@@ -34,11 +34,10 @@
         </tbody>
     </table>
 </div>
-{% endblock %}
 
 <script>
     function loadPayments() {
-        fetch('/payment-history/')
+        fetch('/payment-history/?format=json')
         .then(response => response.json())
         .then(data => {
             let tableBody = document.getElementById("paymentTableBody");
@@ -96,3 +95,4 @@
     setInterval(loadPayments, 5000); // Refresh every 5 seconds
     window.onload = loadPayments;
 </script>
+{% endblock %}
