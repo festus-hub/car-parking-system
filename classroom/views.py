@@ -690,7 +690,15 @@ def vehicle_details(request):
 
 def user_details(request, user_id=None):
     if user_id:
-        # Retrieve the specific user by user_id
+        users = User.objects.filter(id=user_id)
+    else:
+        users = User.objects.all().order_by('-id')
+
+    return render(request, 'dashboard/user_details.html', {'users': users})
+
+
+def user_details_api(request, user_id=None):
+    if user_id:
         try:
             user = User.objects.get(id=user_id)
             user_data = {
@@ -703,8 +711,7 @@ def user_details(request, user_id=None):
         except User.DoesNotExist:
             user_data = {"error": "User not found"}
     else:
-        # If no user_id is provided, retrieve all users
-        users = User.objects.all()
+        users = User.objects.all().order_by('-id')
         user_data = []
         for user in users:
             user_data.append({
