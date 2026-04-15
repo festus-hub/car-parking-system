@@ -74,7 +74,6 @@ from bootstrap_modal_forms.generic import (
     BSModalReadView,
     BSModalDeleteView
 )
-
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 

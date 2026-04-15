@@ -18,31 +18,89 @@
                         <th>Last Login</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ user.id }}</td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.date_joined|date:"m/d/Y" }}</td>
-                        <td>
-                            {% if user.last_login %}
-                                {{ user.last_login|date:"m/d/Y" }}
-                            {% else %}
-                                Never
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
+                <tbody id="userTableBody">
+                    {% if users %}
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.date_joined|date:"m/d/Y" }}</td>
+                            <td>
+                                {% if user.last_login %}
+                                    {{ user.last_login|date:"m/d/Y" }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
                     <tr>
                         <td colspan="6" class="text-center">No users found.</td>
                     </tr>
-                    {% endfor %}
+                    {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<script>
+    function formatDate(dateString) {
+        if (!dateString) {
+            return "Never";
+        }
+
+        const date = new Date(dateString);
+
+        if (Number.isNaN(date.getTime())) {
+            return "N/A";
+        }
+
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const year = date.getFullYear();
+
+        return `${month}/${day}/${year}`;
+    }
+
+    function loadUsers() {
+        fetch("{% url 'user_details' %}")
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById("userTableBody");
+                tableBody.innerHTML = "";
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='6' class='text-center'>No users found.</td></tr>";
+                    return;
+                }
+
+                data.forEach((user, index) => {
+                    const row = `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${user.id ?? "N/A"}</td>
+                            <td>${user.username ?? "N/A"}</td>
+                            <td>${user.email ?? "N/A"}</td>
+                            <td>${formatDate(user.date_joined)}</td>
+                            <td>${formatDate(user.last_login)}</td>
+                        </tr>
+                    `;
+
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(() => {
+                const tableBody = document.getElementById("userTableBody");
+                tableBody.innerHTML = "<tr><td colspan='6' class='text-center text-danger'>Error loading users.</td></tr>";
+            });
+    }
+
+    document.addEventListener("DOMContentLoaded", loadUsers);
+    setInterval(loadUsers, 5000);
+</script>
 
 {% endblock %}
